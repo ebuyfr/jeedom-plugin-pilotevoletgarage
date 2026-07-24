@@ -155,6 +155,9 @@ class pilotevoletgarage extends eqLogic {
         $refresh->setSubType('other');
         $refresh->setIsVisible(0);
         $refresh->save();
+
+        // Initialise la valeur des commandes info (dont l'état HomeKit).
+        $this->refreshEtat();
     }
 
     /* Crée/maj une commande action liée à l'info d'état */
@@ -277,16 +280,16 @@ class pilotevoletgarage extends eqLogic {
      * on l'arrête proprement et on cale la position sur 0 ou 100.
      */
     public function tickEstimation() {
-        if (!$this->getCache('moving', 0)) {
-            return;
+        if ($this->getCache('moving', 0)) {
+            $pos = $this->currentPos();
+            $dir = $this->getCache('dir', self::DIR_UP);
+            if (($dir === self::DIR_UP && $pos >= 100) || ($dir === self::DIR_DOWN && $pos <= 0)) {
+                $this->setCache('pos', $dir === self::DIR_UP ? 100 : 0);
+                $this->setCache('moving', 0);
+                $this->setCache('last_dir', $dir);
+            }
         }
-        $pos = $this->currentPos();
-        $dir = $this->getCache('dir', self::DIR_UP);
-        if (($dir === self::DIR_UP && $pos >= 100) || ($dir === self::DIR_DOWN && $pos <= 0)) {
-            $this->setCache('pos', $dir === self::DIR_UP ? 100 : 0);
-            $this->setCache('moving', 0);
-            $this->setCache('last_dir', $dir);
-        }
+        // Toujours rafraîchir : garde l'état HomeKit alimenté même au repos.
         $this->refreshEtat();
     }
 
