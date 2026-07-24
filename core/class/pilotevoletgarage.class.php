@@ -32,10 +32,37 @@ class pilotevoletgarage extends eqLogic {
         foreach (self::byType('pilotevoletgarage', true) as $eqLogic) {
             /** @var pilotevoletgarage $eqLogic */
             try {
+                $eqLogic->ensureWidget();
                 $eqLogic->tickEstimation();
             } catch (Exception $e) {
                 log::add('pilotevoletgarage', 'error', 'cron: ' . $e->getMessage());
             }
+        }
+    }
+
+    /*
+     * Auto-réparation : applique le widget maison sur la commande État si le
+     * template est absent (équipement créé avant l'ajout du widget) ou resté
+     * sur l'ancienne valeur buguée 'core::garageDoor'. N'écrase jamais un
+     * widget déjà choisi volontairement par l'utilisateur.
+     */
+    public function ensureWidget() {
+        $etat = $this->getCmd(null, 'etat');
+        if (!is_object($etat)) {
+            return;
+        }
+        $target = 'pilotevoletgarage::garageDoor';
+        $changed = false;
+        foreach (array('dashboard', 'mobile') as $version) {
+            $cur = $etat->getTemplate($version);
+            if ($cur === '' || $cur === 'core::garageDoor') {
+                $etat->setTemplate($version, $target);
+                $changed = true;
+            }
+        }
+        if ($changed) {
+            $etat->save();
+            log::add('pilotevoletgarage', 'info', 'Widget garageDoor appliqué automatiquement sur ' . $this->getHumanName());
         }
     }
 

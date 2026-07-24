@@ -3,6 +3,10 @@
 Toutes les évolutions notables de ce plugin sont consignées ici.
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/), versionnement [SemVer](https://semver.org/lang/fr/).
 
+## [0.3.2] - 2026-07-24
+### Ajouté
+- Auto-réparation du widget : le cron applique le template `garageDoor` sur la commande État s'il manque (équipement créé avant le widget) ou s'il était resté sur l'ancienne valeur buguée `core::garageDoor`. Plus besoin de re-sauvegarder l'équipement à la main.
+
 ## [0.3.1] - 2026-07-24
 ### Corrigé
 - Le widget **garageDoor** n'était pas appliqué : `setTemplate` recevait `garageDoor` que Jeedom préfixait en `core::garageDoor` (widget cherché dans le cœur au lieu du plugin). Corrigé en `pilotevoletgarage::garageDoor`.
@@ -27,6 +31,7 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/), versionne
 - Délégation aux commandes Z-Wave JS existantes (`execCmd`), impulsion unique séquentielle, état estimé par temps de course.
 - Commandes : État, État (texte), Ouvrir, Fermer, Stop, Impulsion, Rafraîchir.
 
+[0.3.2]: https://github.com/ebuyfr/jeedom-plugin-pilotevoletgarage/releases/tag/v0.3.2
 [0.3.1]: https://github.com/ebuyfr/jeedom-plugin-pilotevoletgarage/releases/tag/v0.3.1
 [0.3.0]: https://github.com/ebuyfr/jeedom-plugin-pilotevoletgarage/releases/tag/v0.3.0
 [0.2.0]: https://github.com/ebuyfr/jeedom-plugin-pilotevoletgarage/releases/tag/v0.2.0
