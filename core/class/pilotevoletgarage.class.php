@@ -168,9 +168,26 @@ class pilotevoletgarage extends eqLogic {
 
     /* ------------------------- Estimation d'état -------------------- */
 
+    /*
+     * Position de référence figée (0..100), PERSISTÉE.
+     * Si le cache a été purgé (redémarrage du Pi, ménage interne de Jeedom),
+     * on relit la dernière position durable depuis la commande info 'etat'
+     * afin de ne jamais repartir bêtement de 0.
+     */
+    private function getBasePos() {
+        $pos = $this->getCache('pos', null);
+        if ($pos === null || $pos === '') {
+            $etat = $this->getCmd(null, 'etat');
+            $stored = is_object($etat) ? $etat->execCmd() : null;
+            $pos = is_numeric($stored) ? (float) $stored : 0.0;
+            $this->setCache('pos', $pos);
+        }
+        return (float) $pos;
+    }
+
     /* Position courante estimée (0..100), calculée en temps réel. */
     public function currentPos() {
-        $pos = (float) $this->getCache('pos', 0);
+        $pos = $this->getBasePos();
         if ($this->getCache('moving', 0)) {
             $start  = (float) $this->getCache('start_ts', microtime(true));
             $travel = max(1, (int) $this->getConfiguration('travel_time', 18));

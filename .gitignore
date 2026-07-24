@@ -1,3 +1,10 @@
+# Secrets / tokens — NE JAMAIS versionner
+Github*.txt
+*token*.txt
+*.token
+*.pat
+*.key
+
 # Jeedom / plugin
 *.log
 core/config/*.local.php
