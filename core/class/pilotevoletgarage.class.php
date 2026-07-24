@@ -62,6 +62,9 @@ class pilotevoletgarage extends eqLogic {
         $etat->setIsHistorized(0);
         $etat->setConfiguration('minValue', 0);
         $etat->setConfiguration('maxValue', 100);
+        // Widget maison embarqué (core/template/.../cmd.info.numeric.garageDoor.html)
+        $etat->setTemplate('dashboard', 'garageDoor');
+        $etat->setTemplate('mobile', 'garageDoor');
         $etat->save();
         $etatId = $etat->getId();
 

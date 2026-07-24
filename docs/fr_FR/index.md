@@ -36,6 +36,12 @@ Renseignez soit l'**id numérique** de la commande, soit sa **chaîne humaine** 
 | **Stop** | action | Impulsion uniquement si la porte est estimée en mouvement. |
 | **Impulsion** | action | **Contrôle brut déterministe** : une impulsion sur le relais (logique séquentielle du bouton unique). |
 
+## Widget
+
+La commande **État** utilise un widget maison embarqué (`garageDoor`) : une **porte de garage sectionnelle en SVG** qui s'anime selon le pourcentage (fermée à 0 %, ouverte à 100 %), avec le libellé d'état et le pourcentage. Aucun fichier icône externe, aucune dépendance, rien à importer — le widget est versionné avec le plugin et lié automatiquement à la commande.
+
+Paramètres optionnels du widget (onglet *Affichage* de la commande) : `hauteur`, `largeur` (taille de l'illustration), `hidePercent` = `display:none` (masquer le pourcentage).
+
 ## Limites
 
 Avec un **bouton unique séquentiel** (Ouvre → Stop → Ferme → Stop), il est physiquement impossible de garantir une direction. Seule **Impulsion** est certaine. Ouvrir / Fermer / Stop se basent sur l'état estimé, qui peut se désynchroniser (ex. obstacle, commande télécommande hors Jeedom). Un capteur de fin de course (ILS/reed sur une entrée du FGBS-222) supprimerait cette incertitude — évolution possible.
