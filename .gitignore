@@ -1,0 +1,11 @@
+# Jeedom / plugin
+*.log
+core/config/*.local.php
+
+# OS / éditeurs
+.DS_Store
+Thumbs.db
+*.swp
+*~
+.vscode/
+.idea/
