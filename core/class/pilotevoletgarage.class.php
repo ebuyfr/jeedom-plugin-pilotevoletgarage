@@ -62,9 +62,11 @@ class pilotevoletgarage extends eqLogic {
         $etat->setIsHistorized(0);
         $etat->setConfiguration('minValue', 0);
         $etat->setConfiguration('maxValue', 100);
-        // Widget maison embarqué (core/template/.../cmd.info.numeric.garageDoor.html)
-        $etat->setTemplate('dashboard', 'garageDoor');
-        $etat->setTemplate('mobile', 'garageDoor');
+        // Widget maison embarqué (core/template/.../cmd.info.numeric.garageDoor.html).
+        // Le namespace DOIT être l'id du plugin, sinon Jeedom préfixe par 'core::'
+        // et cherche le widget dans le cœur au lieu du plugin.
+        $etat->setTemplate('dashboard', 'pilotevoletgarage::garageDoor');
+        $etat->setTemplate('mobile', 'pilotevoletgarage::garageDoor');
         $etat->save();
         $etatId = $etat->getId();
 
