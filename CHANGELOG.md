@@ -3,6 +3,13 @@
 Toutes les évolutions notables de ce plugin sont consignées ici.
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/), versionnement [SemVer](https://semver.org/lang/fr/).
 
+## [0.4.0] - 2026-07-24
+### Ajouté
+- **Apple Home / Homebridge** : nouvelle commande info `État HomeKit` (type générique `GARAGE_STATE`, valeurs 0=ouvert / 1=fermé / 2=ouverture / 3=fermeture / 4=arrêté) et commande `Impulsion` passée en `GB_TOGGLE`. homebridge-jeedom expose ainsi un accessoire **porte de garage** (GarageDoorOpener) dans Apple Home.
+- Auto-réparation étendue (`ensureConfig`) : le cron crée la commande HomeKit et applique les types génériques sur les équipements existants, sans re-sauvegarde manuelle.
+### Modifié
+- Retrait des types génériques `FLAP_*` sur État/Ouvrir/Fermer/Stop (évite un volet roulant en doublon dans Apple Home). Les boutons restent inchangés côté dashboard Jeedom.
+
 ## [0.3.2] - 2026-07-24
 ### Ajouté
 - Auto-réparation du widget : le cron applique le template `garageDoor` sur la commande État s'il manque (équipement créé avant le widget) ou s'il était resté sur l'ancienne valeur buguée `core::garageDoor`. Plus besoin de re-sauvegarder l'équipement à la main.
@@ -31,6 +38,7 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/), versionne
 - Délégation aux commandes Z-Wave JS existantes (`execCmd`), impulsion unique séquentielle, état estimé par temps de course.
 - Commandes : État, État (texte), Ouvrir, Fermer, Stop, Impulsion, Rafraîchir.
 
+[0.4.0]: https://github.com/ebuyfr/jeedom-plugin-pilotevoletgarage/releases/tag/v0.4.0
 [0.3.2]: https://github.com/ebuyfr/jeedom-plugin-pilotevoletgarage/releases/tag/v0.3.2
 [0.3.1]: https://github.com/ebuyfr/jeedom-plugin-pilotevoletgarage/releases/tag/v0.3.1
 [0.3.0]: https://github.com/ebuyfr/jeedom-plugin-pilotevoletgarage/releases/tag/v0.3.0

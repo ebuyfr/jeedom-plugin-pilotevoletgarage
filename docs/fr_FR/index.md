@@ -42,6 +42,12 @@ La commande **État** utilise un widget maison embarqué (`garageDoor`) : une **
 
 Paramètres optionnels du widget (onglet *Affichage* de la commande) : `hauteur`, `largeur` (taille de l'illustration), `hidePercent` = `display:none` (masquer le pourcentage).
 
+## Apple Home (Homebridge)
+
+Le plugin est prêt pour **homebridge-jeedom** : il crée une commande info **État HomeKit** (`GARAGE_STATE`) et la commande **Impulsion** est en `GB_TOGGLE`. Apple Home affiche alors un accessoire **porte de garage** (ouvrir / fermer + état).
+
+Côté Homebridge (plugin homebridge-jeedom) : inclure l'équipement dans les objets remontés, puis dans Apple Home la tuile « porte de garage » ouvre/ferme via une impulsion et reflète l'état estimé (ouvert / fermé / en mouvement).
+
 ## Limites
 
 Avec un **bouton unique séquentiel** (Ouvre → Stop → Ferme → Stop), il est physiquement impossible de garantir une direction. Seule **Impulsion** est certaine. Ouvrir / Fermer / Stop se basent sur l'état estimé, qui peut se désynchroniser (ex. obstacle, commande télécommande hors Jeedom). Un capteur de fin de course (ILS/reed sur une entrée du FGBS-222) supprimerait cette incertitude — évolution possible.

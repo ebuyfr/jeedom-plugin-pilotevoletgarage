@@ -32,7 +32,7 @@ class pilotevoletgarage extends eqLogic {
         foreach (self::byType('pilotevoletgarage', true) as $eqLogic) {
             /** @var pilotevoletgarage $eqLogic */
             try {
-                $eqLogic->ensureWidget();
+                $eqLogic->ensureConfig();
                 $eqLogic->tickEstimation();
             } catch (Exception $e) {
                 log::add('pilotevoletgarage', 'error', 'cron: ' . $e->getMessage());
@@ -41,39 +41,44 @@ class pilotevoletgarage extends eqLogic {
     }
 
     /*
-     * Auto-réparation : applique le widget maison sur la commande État si le
-     * template est absent (équipement créé avant l'ajout du widget) ou resté
-     * sur l'ancienne valeur buguée 'core::garageDoor'. N'écrase jamais un
-     * widget déjà choisi volontairement par l'utilisateur.
+     * Auto-réparation (appelée par le cron) : ré-applique la configuration des
+     * commandes si un équipement existant est en retard sur le code (widget
+     * absent, commande HomeKit manquante, Impulsion pas en GB_TOGGLE...).
+     * postSave ne se rejouant pas lors d'une mise à jour de plugin, ce filet
+     * de sécurité évite d'avoir à re-sauvegarder l'équipement à la main.
      */
-    public function ensureWidget() {
+    public function ensureConfig() {
         $etat = $this->getCmd(null, 'etat');
-        if (!is_object($etat)) {
-            return;
-        }
-        $target = 'pilotevoletgarage::garageDoor';
-        $changed = false;
-        foreach (array('dashboard', 'mobile') as $version) {
-            $cur = $etat->getTemplate($version);
-            if ($cur === '' || $cur === 'core::garageDoor') {
-                $etat->setTemplate($version, $target);
-                $changed = true;
+        $hk   = $this->getCmd(null, 'etat_hk');
+        $imp  = $this->getCmd(null, 'impulsion');
+        $needSync = !is_object($etat) || !is_object($hk);
+        if (is_object($etat)) {
+            $t = $etat->getTemplate('dashboard');
+            if ($t === '' || $t === 'core::garageDoor') {
+                $needSync = true;
             }
         }
-        if ($changed) {
-            $etat->save();
-            log::add('pilotevoletgarage', 'info', 'Widget garageDoor appliqué automatiquement sur ' . $this->getHumanName());
+        if (is_object($imp) && $imp->getGeneric_type() !== 'GB_TOGGLE') {
+            $needSync = true;
+        }
+        if ($needSync) {
+            $this->syncCommands();
+            log::add('pilotevoletgarage', 'info', 'Configuration auto-réparée sur ' . $this->getHumanName());
         }
     }
 
     /* *********************** Méthodes d'instance ********************** */
 
-    /*
-     * (Ré)création idempotente des commandes du plugin après chaque
-     * sauvegarde de l'équipement.
-     */
     public function postSave() {
-        // --- Info : état estimé (0 = fermé, 100 = ouvert) --------------
+        $this->syncCommands();
+    }
+
+    /*
+     * (Ré)création idempotente des commandes du plugin.
+     * Appelée à la sauvegarde de l'équipement ET par le cron (auto-réparation).
+     */
+    public function syncCommands() {
+        // --- Info : état estimé 0-100 (support du widget porte de garage) ---
         $etat = $this->getCmd(null, 'etat');
         if (!is_object($etat)) {
             $etat = new pilotevoletgarageCmd();
@@ -83,15 +88,16 @@ class pilotevoletgarage extends eqLogic {
         }
         $etat->setType('info');
         $etat->setSubType('numeric');
-        $etat->setGeneric_type('FLAP_STATE');
+        // Pas de type générique FLAP_* : sinon homebridge-jeedom exposerait
+        // aussi un volet roulant en doublon dans Apple Home.
+        $etat->setGeneric_type('');
         $etat->setUnite('%');
         $etat->setIsVisible(1);
         $etat->setIsHistorized(0);
         $etat->setConfiguration('minValue', 0);
         $etat->setConfiguration('maxValue', 100);
-        // Widget maison embarqué (core/template/.../cmd.info.numeric.garageDoor.html).
-        // Le namespace DOIT être l'id du plugin, sinon Jeedom préfixe par 'core::'
-        // et cherche le widget dans le cœur au lieu du plugin.
+        // Widget maison embarqué. Le namespace DOIT être l'id du plugin, sinon
+        // Jeedom préfixe par 'core::' et cherche le widget dans le cœur.
         $etat->setTemplate('dashboard', 'pilotevoletgarage::garageDoor');
         $etat->setTemplate('mobile', 'pilotevoletgarage::garageDoor');
         $etat->save();
@@ -111,14 +117,32 @@ class pilotevoletgarage extends eqLogic {
         $txt->setIsHistorized(0);
         $txt->save();
 
-        // --- Action : Ouvrir ------------------------------------------
-        $this->createAction('ouvrir', __('Ouvrir', __FILE__), 'FLAP_UP', $etatId, 100);
-        // --- Action : Fermer ------------------------------------------
-        $this->createAction('fermer', __('Fermer', __FILE__), 'FLAP_DOWN', $etatId, 0);
-        // --- Action : Stop --------------------------------------------
-        $this->createAction('stop', __('Stop', __FILE__), 'FLAP_STOP', $etatId, null);
-        // --- Action : Impulsion (contrôle brut, toujours fiable) ------
-        $this->createAction('impulsion', __('Impulsion', __FILE__), '', $etatId, null);
+        // --- Info : état HomeKit (GARAGE_STATE, valeurs 0-4) -----------
+        // 0=Ouvert 1=Fermé 2=Ouverture 3=Fermeture 4=Arrêté (enum CurrentDoorState).
+        // Lu par homebridge-jeedom pour exposer un GarageDoorOpener dans Apple Home.
+        $hk = $this->getCmd(null, 'etat_hk');
+        if (!is_object($hk)) {
+            $hk = new pilotevoletgarageCmd();
+            $hk->setLogicalId('etat_hk');
+            $hk->setEqLogic_id($this->getId());
+            $hk->setName(__('État HomeKit', __FILE__));
+        }
+        $hk->setType('info');
+        $hk->setSubType('numeric');
+        $hk->setGeneric_type('GARAGE_STATE');
+        $hk->setIsVisible(0);
+        $hk->setIsHistorized(0);
+        $hk->save();
+
+        // --- Actions --------------------------------------------------
+        // Ouvrir/Fermer/Stop : sans type générique (le pilotage HomeKit passe
+        // par Impulsion=GB_TOGGLE, adapté au bouton unique séquentiel).
+        $this->createAction('ouvrir', __('Ouvrir', __FILE__), '', $etatId, 100);
+        $this->createAction('fermer', __('Fermer', __FILE__), '', $etatId, 0);
+        $this->createAction('stop', __('Stop', __FILE__), '', $etatId, null);
+        // Impulsion = bouton toggle porte de garage pour Apple Home.
+        $this->createAction('impulsion', __('Impulsion', __FILE__), 'GB_TOGGLE', $etatId, null);
+
         // --- Action : Rafraîchir --------------------------------------
         $refresh = $this->getCmd(null, 'rafraichir');
         if (!is_object($refresh)) {
@@ -144,12 +168,10 @@ class pilotevoletgarage extends eqLogic {
         }
         $cmd->setType('action');
         $cmd->setSubType('other');
-        if ($genericType !== '') {
-            $cmd->setGeneric_type($genericType);
-        }
+        $cmd->setGeneric_type($genericType); // '' = aucun (efface un FLAP_* hérité)
         $cmd->setIsVisible(1);
         if ($etatId !== null) {
-            $cmd->setValue($etatId); // lie le bouton au widget volet
+            $cmd->setValue($etatId);
         }
         $cmd->save();
         return $cmd;
@@ -279,6 +301,24 @@ class pilotevoletgarage extends eqLogic {
         if (is_object($txt)) {
             $txt->event($this->stateLabel($pos));
         }
+        $hk = $this->getCmd(null, 'etat_hk');
+        if (is_object($hk)) {
+            $hk->event($this->hkState());
+        }
+    }
+
+    /*
+     * État au format HomeKit CurrentDoorState :
+     * 0=Ouvert, 1=Fermé, 2=Ouverture, 3=Fermeture, 4=Arrêté (partiel).
+     */
+    private function hkState() {
+        if ($this->getCache('moving', 0)) {
+            return $this->getCache('dir', self::DIR_UP) === self::DIR_UP ? 2 : 3;
+        }
+        $pos = $this->currentPos();
+        if ($pos <= 0)   return 1;
+        if ($pos >= 100) return 0;
+        return 4;
     }
 
     private function stateLabel($pos) {
