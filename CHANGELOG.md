@@ -3,6 +3,15 @@
 Toutes les évolutions notables de ce plugin sont consignées ici.
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/), versionnement [SemVer](https://semver.org/lang/fr/).
 
+## [0.5.0] - 2026-07-24
+### Ajouté
+- Option **Inverser ouvert/fermé** : inverse la sémantique (widget, état texte, état HomeKit) si l'état s'affiche à l'envers par rapport à la réalité.
+### Modifié
+- **Apple Home** : Ouvrir → `GB_OPEN` et Fermer → `GB_CLOSE` (au lieu d'un unique `GB_TOGGLE` sur Impulsion). Apple Home indique désormais explicitement le sens voulu, ce qui fiabilise l'estimation et **corrige l'icône qui se refermait toute seule** avec un moteur à bouton unique.
+- Impulsion n'a plus de type générique HomeKit (reste le contrôle brut du dashboard).
+### Documentation
+- Relais du FGBS-222 en **auto-off/momentané** : mettre la durée d'impulsion à **0** pour ne pas envoyer le OFF (évite une double impulsion).
+
 ## [0.4.1] - 2026-07-24
 ### Corrigé
 - L'état HomeKit est désormais rafraîchi à chaque cycle de cron et à l'initialisation, même au repos (sinon Apple Home affichait « Arrêté » au lieu de « Fermé » tant qu'aucun mouvement n'avait eu lieu).
@@ -42,6 +51,7 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/), versionne
 - Délégation aux commandes Z-Wave JS existantes (`execCmd`), impulsion unique séquentielle, état estimé par temps de course.
 - Commandes : État, État (texte), Ouvrir, Fermer, Stop, Impulsion, Rafraîchir.
 
+[0.5.0]: https://github.com/ebuyfr/jeedom-plugin-pilotevoletgarage/releases/tag/v0.5.0
 [0.4.1]: https://github.com/ebuyfr/jeedom-plugin-pilotevoletgarage/releases/tag/v0.4.1
 [0.4.0]: https://github.com/ebuyfr/jeedom-plugin-pilotevoletgarage/releases/tag/v0.4.0
 [0.3.2]: https://github.com/ebuyfr/jeedom-plugin-pilotevoletgarage/releases/tag/v0.3.2

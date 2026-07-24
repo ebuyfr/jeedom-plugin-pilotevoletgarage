@@ -124,15 +124,22 @@ $eqLogics = eqLogic::byType($plugin->getId());
 
                         <legend><i class="fas fa-sliders-h"></i> {{Temporisation}}</legend>
                         <div class="form-group">
-                            <label class="col-sm-3 control-label">{{Durée d'impulsion (ms)}}<sup><i class="fas fa-question-circle tooltips" title="{{Temps entre le ON et le OFF du relais. Typiquement 500 à 800 ms.}}"></i></sup></label>
+                            <label class="col-sm-3 control-label">{{Durée d'impulsion (ms)}}<sup><i class="fas fa-question-circle tooltips" title="{{Temps entre le ON et le OFF du relais. Typiquement 500 à 800 ms. Mettre 0 si le relais du FGBS-222 est en mode auto-off/momentané : le OFF n'est alors pas envoyé (évite une double impulsion).}}"></i></sup></label>
                             <div class="col-sm-3">
                                 <input type="number" min="0" step="50" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="pulse_ms" placeholder="600">
                             </div>
+                            <div class="col-sm-6"><span class="help-block" style="margin:7px 0 0;">{{Relais en auto-off ? Mettre 0.}}</span></div>
                         </div>
                         <div class="form-group">
                             <label class="col-sm-3 control-label">{{Temps de course complet (s)}}<sup><i class="fas fa-question-circle tooltips" title="{{Temps qu'il faut à la porte pour aller de fermée à ouverte. Sert au calcul de l'état estimé.}}"></i></sup></label>
                             <div class="col-sm-3">
                                 <input type="number" min="1" step="1" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="travel_time" placeholder="18">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label">{{Inverser ouvert/fermé}}<sup><i class="fas fa-question-circle tooltips" title="{{Inverse la sémantique ouvert/fermé partout (widget, état texte, état HomeKit). À activer si l'état affiché est à l'envers par rapport à la réalité.}}"></i></sup></label>
+                            <div class="col-sm-6" style="padding-top:7px;">
+                                <input type="checkbox" class="eqLogicAttr" data-l1key="configuration" data-l2key="invert">
                             </div>
                         </div>
                         <div class="alert alert-warning">

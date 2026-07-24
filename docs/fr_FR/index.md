@@ -20,8 +20,9 @@ Comme aucune fin de course n'est câblée, l'état de la porte est **estimé** �
 |-------|-------------|
 | **Commande relais ON** | Commande action qui **ferme** le relais (ex. FGBS-222 : « OuvertureFermeture », `37-5-targetValue-true`). |
 | **Commande relais OFF** | Commande action qui **ouvre** le relais (ex. « STOP », `37-5-targetValue-false`). Laisser vide si le relais est en mode auto-off. |
-| **Durée d'impulsion (ms)** | Temps entre le ON et le OFF. Typiquement 500 à 800 ms. Défaut : 600. |
+| **Durée d'impulsion (ms)** | Temps entre le ON et le OFF. Typiquement 500 à 800 ms. Défaut : 600. **Relais en auto-off/momentané : mettre 0** (le OFF n'est pas envoyé, évite une double impulsion). |
 | **Temps de course complet (s)** | Temps porte fermée → ouverte. Sert au calcul de l'état estimé. Défaut : 18. |
+| **Inverser ouvert/fermé** | Inverse la sémantique ouvert/fermé partout (widget, texte, HomeKit). À cocher si l'état s'affiche à l'envers. |
 
 Renseignez soit l'**id numérique** de la commande, soit sa **chaîne humaine** `#[objet][équipement][commande]#` (via le bouton de sélection).
 
@@ -44,7 +45,7 @@ Paramètres optionnels du widget (onglet *Affichage* de la commande) : `hauteur`
 
 ## Apple Home (Homebridge)
 
-Le plugin est prêt pour **homebridge-jeedom** : il crée une commande info **État HomeKit** (`GARAGE_STATE`) et la commande **Impulsion** est en `GB_TOGGLE`. Apple Home affiche alors un accessoire **porte de garage** (ouvrir / fermer + état).
+Le plugin est prêt pour **homebridge-jeedom** : il crée une commande info **État HomeKit** (`GARAGE_STATE`), et **Ouvrir**/**Fermer** portent les types `GB_OPEN`/`GB_CLOSE`. Apple Home affiche un accessoire **porte de garage** et indique explicitement le sens (ouvrir/fermer), ce qui rend l'estimation fiable même avec un moteur à bouton unique.
 
 Côté Homebridge (plugin homebridge-jeedom) : inclure l'équipement dans les objets remontés, puis dans Apple Home la tuile « porte de garage » ouvre/ferme via une impulsion et reflète l'état estimé (ouvert / fermé / en mouvement).
 

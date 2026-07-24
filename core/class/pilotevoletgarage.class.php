@@ -50,7 +50,6 @@ class pilotevoletgarage extends eqLogic {
     public function ensureConfig() {
         $etat = $this->getCmd(null, 'etat');
         $hk   = $this->getCmd(null, 'etat_hk');
-        $imp  = $this->getCmd(null, 'impulsion');
         $needSync = !is_object($etat) || !is_object($hk);
         if (is_object($etat)) {
             $t = $etat->getTemplate('dashboard');
@@ -58,7 +57,8 @@ class pilotevoletgarage extends eqLogic {
                 $needSync = true;
             }
         }
-        if (is_object($imp) && $imp->getGeneric_type() !== 'GB_TOGGLE') {
+        $ouv = $this->getCmd(null, 'ouvrir');
+        if (is_object($ouv) && $ouv->getGeneric_type() !== 'GB_OPEN') {
             $needSync = true;
         }
         if ($needSync) {
@@ -135,13 +135,15 @@ class pilotevoletgarage extends eqLogic {
         $hk->save();
 
         // --- Actions --------------------------------------------------
-        // Ouvrir/Fermer/Stop : sans type générique (le pilotage HomeKit passe
-        // par Impulsion=GB_TOGGLE, adapté au bouton unique séquentiel).
-        $this->createAction('ouvrir', __('Ouvrir', __FILE__), '', $etatId, 100);
-        $this->createAction('fermer', __('Fermer', __FILE__), '', $etatId, 0);
+        // Ouvrir = GB_OPEN, Fermer = GB_CLOSE : Apple Home indique explicitement
+        // le sens voulu, ce qui rend l'estimation (et donc le visuel HomeKit)
+        // fiable malgré le bouton unique. Physiquement les deux envoient la même
+        // impulsion ; seule la direction estimée diffère.
+        $this->createAction('ouvrir', __('Ouvrir', __FILE__), 'GB_OPEN', $etatId, 100);
+        $this->createAction('fermer', __('Fermer', __FILE__), 'GB_CLOSE', $etatId, 0);
         $this->createAction('stop', __('Stop', __FILE__), '', $etatId, null);
-        // Impulsion = bouton toggle porte de garage pour Apple Home.
-        $this->createAction('impulsion', __('Impulsion', __FILE__), 'GB_TOGGLE', $etatId, null);
+        // Impulsion : contrôle brut (dashboard), sans type générique HomeKit.
+        $this->createAction('impulsion', __('Impulsion', __FILE__), '', $etatId, null);
 
         // --- Action : Rafraîchir --------------------------------------
         $refresh = $this->getCmd(null, 'rafraichir');
@@ -234,9 +236,12 @@ class pilotevoletgarage extends eqLogic {
     private function getBasePos() {
         $pos = $this->getCache('pos', null);
         if ($pos === null || $pos === '') {
+            // La cmd 'etat' stocke le TAUX D'OUVERTURE (inversé si option active) :
+            // on reconvertit vers la position interne.
             $etat = $this->getCmd(null, 'etat');
             $stored = is_object($etat) ? $etat->execCmd() : null;
-            $pos = is_numeric($stored) ? (float) $stored : 0.0;
+            $open = is_numeric($stored) ? (float) $stored : 0.0;
+            $pos = $this->getConfiguration('invert', 0) ? (100 - $open) : $open;
             $this->setCache('pos', $pos);
         }
         return (float) $pos;
@@ -293,16 +298,36 @@ class pilotevoletgarage extends eqLogic {
         $this->refreshEtat();
     }
 
-    /* Pousse l'état estimé vers les commandes info (widget). */
+    /* ------------------- Couche d'affichage (avec inversion) --------- */
+
+    /* Taux d'OUVERTURE affiché (0 = fermé, 100 = ouvert), après inversion
+     * éventuelle. La position interne (currentPos) reste inchangée ; seule
+     * la sémantique ouvert/fermé est inversée par l'option 'invert'. */
+    private function openness() {
+        $pos = $this->currentPos();
+        return $this->getConfiguration('invert', 0) ? (100 - $pos) : $pos;
+    }
+
+    /* Vrai si le taux d'ouverture augmente (= la porte s'ouvre). */
+    private function opennessIncreasing() {
+        $posUp = ($this->getCache('dir', self::DIR_UP) === self::DIR_UP); // pos interne croît
+        return $this->getConfiguration('invert', 0) ? !$posUp : $posUp;
+    }
+
+    /* Direction interne (pos) pour aller vers l'ouverture / la fermeture. */
+    private function dirToOpen()  { return $this->getConfiguration('invert', 0) ? self::DIR_DOWN : self::DIR_UP; }
+    private function dirToClose() { return $this->getConfiguration('invert', 0) ? self::DIR_UP : self::DIR_DOWN; }
+
+    /* Pousse l'état estimé vers les commandes info (widget + HomeKit). */
     public function refreshEtat() {
-        $pos  = (int) round($this->currentPos());
+        $o = (int) round($this->openness());
         $etat = $this->getCmd(null, 'etat');
         if (is_object($etat)) {
-            $etat->event($pos);
+            $etat->event($o);
         }
         $txt = $this->getCmd(null, 'etat_texte');
         if (is_object($txt)) {
-            $txt->event($this->stateLabel($pos));
+            $txt->event($this->stateLabel($o));
         }
         $hk = $this->getCmd(null, 'etat_hk');
         if (is_object($hk)) {
@@ -316,23 +341,23 @@ class pilotevoletgarage extends eqLogic {
      */
     private function hkState() {
         if ($this->getCache('moving', 0)) {
-            return $this->getCache('dir', self::DIR_UP) === self::DIR_UP ? 2 : 3;
+            return $this->opennessIncreasing() ? 2 : 3;
         }
-        $pos = $this->currentPos();
-        if ($pos <= 0)   return 1;
-        if ($pos >= 100) return 0;
+        $o = $this->openness();
+        if ($o <= 0)   return 1;
+        if ($o >= 100) return 0;
         return 4;
     }
 
-    private function stateLabel($pos) {
+    private function stateLabel($o) {
         if ($this->getCache('moving', 0)) {
-            return $this->getCache('dir', self::DIR_UP) === self::DIR_UP
+            return $this->opennessIncreasing()
                 ? __('Ouverture…', __FILE__)
                 : __('Fermeture…', __FILE__);
         }
-        if ($pos <= 0)   return __('Fermé', __FILE__);
-        if ($pos >= 100) return __('Ouvert', __FILE__);
-        return __('Arrêté', __FILE__) . ' (' . $pos . '%)';
+        if ($o <= 0)   return __('Fermé', __FILE__);
+        if ($o >= 100) return __('Ouvert', __FILE__);
+        return __('Arrêté', __FILE__) . ' (' . $o . '%)';
     }
 
     /* ------------------------- Actions publiques -------------------- */
@@ -360,8 +385,9 @@ class pilotevoletgarage extends eqLogic {
      * Par sécurité on ne ré-inverse jamais une porte en train de fermer :
      * on l'arrête d'abord. */
     public function actionOuvrir() {
+        $dirOpen = $this->dirToOpen();
         if ($this->getCache('moving', 0)) {
-            if ($this->getCache('dir', self::DIR_UP) === self::DIR_UP) {
+            if ($this->getCache('dir', self::DIR_UP) === $dirOpen) {
                 return; // déjà en ouverture
             }
             $this->pulse();      // en fermeture → on stoppe (sécurité)
@@ -369,18 +395,19 @@ class pilotevoletgarage extends eqLogic {
             $this->refreshEtat();
             return;
         }
-        if ($this->currentPos() >= 100) {
+        if ($this->openness() >= 100) {
             return; // déjà ouvert
         }
         $this->pulse();
-        $this->startMove(self::DIR_UP);
+        $this->startMove($dirOpen);
         $this->refreshEtat();
     }
 
     /* Fermer (meilleur effort), symétrique de actionOuvrir(). */
     public function actionFermer() {
+        $dirClose = $this->dirToClose();
         if ($this->getCache('moving', 0)) {
-            if ($this->getCache('dir', self::DIR_UP) === self::DIR_DOWN) {
+            if ($this->getCache('dir', self::DIR_UP) === $dirClose) {
                 return; // déjà en fermeture
             }
             $this->pulse();      // en ouverture → on stoppe (sécurité)
@@ -388,11 +415,11 @@ class pilotevoletgarage extends eqLogic {
             $this->refreshEtat();
             return;
         }
-        if ($this->currentPos() <= 0) {
+        if ($this->openness() <= 0) {
             return; // déjà fermé
         }
         $this->pulse();
-        $this->startMove(self::DIR_DOWN);
+        $this->startMove($dirClose);
         $this->refreshEtat();
     }
 
