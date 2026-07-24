@@ -1,5 +1,7 @@
 # Plugin Jeedom — Pilote Volet Garage
 
+![version](https://img.shields.io/badge/version-0.3.0-blue) ![jeedom](https://img.shields.io/badge/jeedom-%E2%89%A5%204.2-brightgreen)
+
 Plugin Jeedom pour piloter une porte / volet de garage **Somfy** via un module **Fibaro FGBS-222 (Smart Implant)** exposé par le plugin **Z-Wave JS**.
 
 - **Transport** : délégation aux commandes Z-Wave JS existantes via `execCmd()` — pas de démon, pas de MQTT direct.
