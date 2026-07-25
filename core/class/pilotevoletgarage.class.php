@@ -355,6 +355,18 @@ class pilotevoletgarage extends eqLogic {
         @exec('(sleep ' . $sec . '; php ' . escapeshellarg($script) . ' ' . (int) $this->getId() . ') >/dev/null 2>&1 &');
     }
 
+    /* Programme, en tâche détachée, la vérification de fermeture automatique à
+     * l'échéance du délai Somfy — pour un déclenchement précis, sans attendre le
+     * cron (1 min). Le cron reste en filet de sécurité. */
+    private function scheduleAutoClose($sec) {
+        $sec = (int) $sec;
+        $script = realpath(__DIR__ . '/../../resources/settle.php');
+        if ($sec <= 0 || $script === false || !function_exists('exec')) {
+            return;
+        }
+        @exec('(sleep ' . ($sec + 1) . '; php ' . escapeshellarg($script) . ' ' . (int) $this->getId() . ') >/dev/null 2>&1 &');
+    }
+
     /* Arrête le mouvement estimé et fige la position. */
     private function stopMove() {
         $pos = $this->currentPos();
@@ -397,16 +409,17 @@ class pilotevoletgarage extends eqLogic {
         // fermeture SANS envoyer d'impulsion (le moteur agit seul).
         if (!$this->getCache('moving', 0)) {
             if ($this->openness() >= 100) {
+                $sec   = (int) $this->getConfiguration('auto_close_sec', 0);
                 $since = $this->getCache('open_since', '');
                 if ($since === '' || $since === null) {
                     $this->setCache('open_since', microtime(true));
-                } else {
-                    $autoMin = (int) $this->getConfiguration('auto_close_min', 0);
-                    if ($autoMin > 0 && (microtime(true) - (float) $since) >= $autoMin * 60) {
-                        $this->setCache('open_since', '');
-                        $this->startMove($this->dirToClose()); // sans pulse : le Somfy referme seul
-                        log::add('pilotevoletgarage', 'info', 'Fermeture automatique Somfy reflétée sur ' . $this->getHumanName());
+                    if ($sec > 0) {
+                        $this->scheduleAutoClose($sec); // déclenchement précis à l'échéance
                     }
+                } elseif ($sec > 0 && (microtime(true) - (float) $since) >= $sec) {
+                    $this->setCache('open_since', '');
+                    $this->startMove($this->dirToClose()); // sans pulse : le Somfy referme seul
+                    log::add('pilotevoletgarage', 'info', 'Fermeture automatique Somfy reflétée sur ' . $this->getHumanName());
                 }
             } else {
                 $this->setCache('open_since', '');

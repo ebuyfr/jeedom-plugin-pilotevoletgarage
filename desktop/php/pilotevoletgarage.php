@@ -155,11 +155,11 @@ $eqLogics = eqLogic::byType($plugin->getId());
                             </div>
                         </div>
                         <div class="form-group">
-                            <label class="col-sm-3 control-label">{{Fermeture auto après (min)}}<sup><i class="fas fa-question-circle tooltips" title="{{Si la centrale Somfy referme la porte toute seule après un délai, indiquez-le ici (en minutes) pour que l'état estimé suive (0 = désactivé). Le plugin n'envoie AUCUNE impulsion : il reflète juste la fermeture automatique du moteur.}}"></i></sup></label>
+                            <label class="col-sm-3 control-label">{{Fermeture auto après (s)}}<sup><i class="fas fa-question-circle tooltips" title="{{Si la centrale Somfy referme la porte toute seule après un délai, indiquez-le ici EN SECONDES (le Somfy va de 5 s à 120 s) pour que l'état estimé suive. 0 = désactivé. Le plugin n'envoie AUCUNE impulsion : il reflète juste la fermeture automatique du moteur.}}"></i></sup></label>
                             <div class="col-sm-3">
-                                <input type="number" min="0" step="1" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="auto_close_min" placeholder="0">
+                                <input type="number" min="0" max="120" step="5" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="auto_close_sec" placeholder="0">
                             </div>
-                            <div class="col-sm-5"><span class="help-block" style="margin-top:7px;">{{0 = désactivé. Ex. Somfy réglé sur 3 min → mettre 3.}}</span></div>
+                            <div class="col-sm-5"><span class="help-block" style="margin-top:7px;">{{0 = désactivé. Mettre la même valeur que la temporisation Somfy (ex. 120 pour 2 min).}}</span></div>
                         </div>
                         <div class="form-group">
                             <label class="col-sm-3 control-label">{{Style d'enroulement (widget)}}<sup><i class="fas fa-question-circle tooltips" title="{{Barre fixe : le coffre au-dessus du cadre reste de taille constante. Enroulement qui grossit : le coffre s'épaissit à mesure que le volet s'ouvre.}}"></i></sup></label>

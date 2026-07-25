@@ -3,6 +3,10 @@
 Toutes les évolutions notables de ce plugin sont consignées ici.
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/), versionnement [SemVer](https://semver.org/lang/fr/).
 
+## [0.10.1] - 2026-07-25
+### Corrigé / Modifié
+- **Fermeture auto en secondes** : le réglage passe de minutes à **secondes** (`auto_close_sec`, 0-120) pour coller au Somfy (5 s → 2 min). Déclenchement rendu **précis** via une tâche détachée programmée à l'échéance (le cron reste en filet de sécurité) au lieu d'attendre le prochain passage du cron.
+
 ## [0.10.0] - 2026-07-25
 ### Modifié
 - **Widget en volet roulant** : le tablier ne monte plus au-dessus du linteau pour disparaître ; il **s'enroule vers le haut** (le bord bas remonte) et une **barre (le coffre) reste au-dessus du cadre**. Rendu plus fidèle à un volet.
@@ -101,6 +105,7 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/), versionne
 - Délégation aux commandes Z-Wave JS existantes (`execCmd`), impulsion unique séquentielle, état estimé par temps de course.
 - Commandes : État, État (texte), Ouvrir, Fermer, Stop, Impulsion, Rafraîchir.
 
+[0.10.1]: https://github.com/ebuyfr/jeedom-plugin-pilotevoletgarage/releases/tag/v0.10.1
 [0.10.0]: https://github.com/ebuyfr/jeedom-plugin-pilotevoletgarage/releases/tag/v0.10.0
 [0.9.2]: https://github.com/ebuyfr/jeedom-plugin-pilotevoletgarage/releases/tag/v0.9.2
 [0.9.1]: https://github.com/ebuyfr/jeedom-plugin-pilotevoletgarage/releases/tag/v0.9.1
