@@ -108,6 +108,11 @@ class pilotevoletgarage extends eqLogic {
         // Jeedom préfixe par 'core::' et cherche le widget dans le cœur.
         $etat->setTemplate('dashboard', 'pilotevoletgarage::garageDoor');
         $etat->setTemplate('mobile', 'pilotevoletgarage::garageDoor');
+        // Transmet le temps de course au widget (animation client-side #travel#).
+        $params = $etat->getDisplay('parameters');
+        if (!is_array($params)) { $params = array(); }
+        $params['travel'] = (int) $this->getConfiguration('travel_time', 18);
+        $etat->setDisplay('parameters', $params);
         $etat->save();
         $etatId = $etat->getId();
 
@@ -326,9 +331,17 @@ class pilotevoletgarage extends eqLogic {
     /* Pousse l'état estimé vers les commandes info (widget + HomeKit). */
     public function refreshEtat() {
         $o = (int) round($this->openness());
+        // Widget : pendant un mouvement on pousse la CIBLE (0 fermé / 100 ouvert).
+        // Le widget anime lui-même la porte à la vitesse du temps de course
+        // (animation fluide et arrêt à l'heure, sans dépendre du cron 1 min).
+        // À l'arrêt on pousse la position réelle estimée.
+        $display = $o;
+        if ($this->getCache('moving', 0)) {
+            $display = $this->opennessIncreasing() ? 100 : 0;
+        }
         $etat = $this->getCmd(null, 'etat');
         if (is_object($etat)) {
-            $etat->event($o);
+            $etat->event($display);
         }
         $txt = $this->getCmd(null, 'etat_texte');
         if (is_object($txt)) {

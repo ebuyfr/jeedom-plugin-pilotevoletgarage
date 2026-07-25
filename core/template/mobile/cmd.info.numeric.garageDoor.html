@@ -1,4 +1,4 @@
-<!-- Widget "garageDoor" (mobile) — porte de garage sectionnelle animée (0 = fermé, 100 = ouvert) -->
+<!-- Widget "garageDoor" (mobile) — porte de garage animée côté navigateur. -->
 <div class="cmd cmd-widget #history# #displayHistory#" data-type="info" data-subtype="numeric" data-template="garageDoor" data-cmd_id="#id#" data-cmd_uid="#uid#" data-version="#version#" data-eqLogic_id="#eqLogic_id#" title="#collectDate#">
   <div class="title #hide_name#">
     <div class="cmdName" style="font-weight:bold;">#name_display#</div>
@@ -34,24 +34,52 @@
   <template>
     <div>hauteur : 80px ({{Hauteur de l'illustration}})</div>
     <div>largeur : 80px ({{Largeur de l'illustration}})</div>
+    <div>travel : 18 ({{Temps de course complet en secondes}})</div>
     <div>hidePercent : display:none ({{Masquer le pourcentage}})</div>
   </template>
   <script>
     (function () {
       var UID = '#uid#';
+      var TRAVEL = parseFloat('#travel#'); if (isNaN(TRAVEL) || TRAVEL <= 0) { TRAVEL = 18; }
+      var rendered = null, raf = null;
+
+      function el() { return document.querySelector('.cmd[data-cmd_uid="' + UID + '"]'); }
+      function setDoor(root, v) {
+        var d = root.querySelector('.gd-door');
+        if (d) { d.setAttribute('transform', 'translate(0,' + (-(v / 100) * 74) + ')'); }
+        var p = root.querySelector('.gd-pct'); if (p) { p.textContent = Math.round(v) + '%'; }
+      }
+      function staticLabel(v) { return (v <= 0) ? 'Fermé' : (v >= 100 ? 'Ouvert' : 'Arrêté ' + Math.round(v) + '%'); }
+      function setLabel(root, txt) { var s = root.querySelector('.gd-state'); if (s) { s.textContent = txt; } }
+
+      function animateTo(root, target, durationMs, movingLabel, endLabel) {
+        if (raf) { cancelAnimationFrame(raf); raf = null; }
+        var startVal = (rendered === null) ? target : rendered;
+        var startT = null, dur = Math.max(1, durationMs);
+        if (movingLabel) { setLabel(root, movingLabel); }
+        function step(now) {
+          if (startT === null) { startT = now; }
+          var t = Math.min(1, (now - startT) / dur);
+          rendered = startVal + (target - startVal) * t;
+          setDoor(root, rendered);
+          if (t < 1) { raf = requestAnimationFrame(step); }
+          else { rendered = target; setDoor(root, target); setLabel(root, endLabel); raf = null; }
+        }
+        raf = requestAnimationFrame(step);
+      }
+
       jeedom.cmd.addUpdateFunction('#id#', function (_options) {
-        var el = document.querySelector('.cmd[data-cmd_uid="' + UID + '"]');
-        if (el === null) return;
-        var v = parseFloat(_options.value);
-        if (isNaN(v)) v = 0;
-        if (v < 0) v = 0; if (v > 100) v = 100;
-        var H = 74;
-        el.querySelector('.gd-door').setAttribute('transform', 'translate(0,' + (-(v / 100) * H) + ')');
-        var pct = Math.round(v);
-        var st = el.querySelector('.gd-state');
-        if (st) st.textContent = (pct <= 0) ? '{{Fermé}}' : (pct >= 100 ? '{{Ouvert}}' : '{{Ouvert}} ' + pct + '%');
-        var lbl = el.querySelector('.gd-pct');
-        if (lbl) lbl.textContent = pct + '%';
+        var root = el(); if (root === null) { return; }
+        var v = parseFloat(_options.value); if (isNaN(v)) { v = 0; }
+        if (v < 0) { v = 0; } if (v > 100) { v = 100; }
+
+        if (rendered === null) { rendered = v; setDoor(root, v); setLabel(root, staticLabel(v)); return; }
+        if ((v === 0 || v === 100) && Math.round(rendered) !== v) {
+          var durMs = Math.abs(v - rendered) / 100 * TRAVEL * 1000;
+          animateTo(root, v, durMs, (v === 0 ? 'Fermeture…' : 'Ouverture…'), (v === 0 ? 'Fermé' : 'Ouvert'));
+        } else {
+          animateTo(root, v, 400, null, staticLabel(v));
+        }
       });
       jeedom.cmd.refreshValue([{ cmd_id: '#id#', value: '#value#', display_value: '#state#', valueDate: '#valueDate#', collectDate: '#collectDate#', alertLevel: '#alertLevel#', unit: '#unite#' }]);
     })();
