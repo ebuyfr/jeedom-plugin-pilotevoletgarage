@@ -3,6 +3,13 @@
 Toutes les évolutions notables de ce plugin sont consignées ici.
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/), versionnement [SemVer](https://semver.org/lang/fr/).
 
+## [0.9.0] - 2026-07-25
+### Modifié / Corrigé
+- **Fermeture depuis l'ouverture complète (Apple Home)** : le moteur séquentiel demande **2 impulsions** pour repartir en fermeture (la 1re est absorbée). Pour que Siri/Apple Home transmette l'intention (ouvrir ≠ fermer), Ouvrir passe en `GB_OPEN` et Fermer en `GB_CLOSE` (Impulsion n'a plus de générique). Le plugin envoie alors le bon nombre d'impulsions : **1 pour ouvrir depuis fermé, 2 pour fermer depuis l'ouverture ou en cours d'ouverture** (et 2 pour inverser un mouvement).
+- Nouveau réglage **Délai entre 2 impulsions (ms)** (défaut 1200) pour laisser le moteur enregistrer 2 appuis distincts.
+### Note
+- Après mise à jour : sauvegarder l'équipement puis **redémarrer le démon Homebridge** (les types génériques changent).
+
 ## [0.8.2] - 2026-07-25
 ### Corrigé
 - Erreurs JS (`TypeError ... parentNode ... null`) dans l'aperçu de l'onglet Commandes : l'appel `jeedom.cmd.refreshValue` du widget est désormais protégé (n'agit que si le widget est présent dans le DOM, avec garde try/catch). Sans effet sur le dashboard.
@@ -80,6 +87,7 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/), versionne
 - Délégation aux commandes Z-Wave JS existantes (`execCmd`), impulsion unique séquentielle, état estimé par temps de course.
 - Commandes : État, État (texte), Ouvrir, Fermer, Stop, Impulsion, Rafraîchir.
 
+[0.9.0]: https://github.com/ebuyfr/jeedom-plugin-pilotevoletgarage/releases/tag/v0.9.0
 [0.8.2]: https://github.com/ebuyfr/jeedom-plugin-pilotevoletgarage/releases/tag/v0.8.2
 [0.8.1]: https://github.com/ebuyfr/jeedom-plugin-pilotevoletgarage/releases/tag/v0.8.1
 [0.8.0]: https://github.com/ebuyfr/jeedom-plugin-pilotevoletgarage/releases/tag/v0.8.0

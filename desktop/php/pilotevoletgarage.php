@@ -143,6 +143,12 @@ $eqLogics = eqLogic::byType($plugin->getId());
                             <div class="col-sm-6"><span class="help-block" style="margin:7px 0 0;">{{Relais en auto-off ? Mettre 0.}}</span></div>
                         </div>
                         <div class="form-group">
+                            <label class="col-sm-3 control-label">{{Délai entre 2 impulsions (ms)}}<sup><i class="fas fa-question-circle tooltips" title="{{Temps entre les deux impulsions envoyées pour inverser le sens (fermer depuis l'ouverture). Le moteur doit avoir le temps d'enregistrer 2 appuis distincts. Typiquement 1000 à 1500 ms.}}"></i></sup></label>
+                            <div class="col-sm-3">
+                                <input type="number" min="0" step="100" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="double_gap_ms" placeholder="1200">
+                            </div>
+                        </div>
+                        <div class="form-group">
                             <label class="col-sm-3 control-label">{{Temps de course complet (s)}}<sup><i class="fas fa-question-circle tooltips" title="{{Temps qu'il faut à la porte pour aller de fermée à ouverte. Sert au calcul de l'état estimé.}}"></i></sup></label>
                             <div class="col-sm-3">
                                 <input type="number" min="1" step="1" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="travel_time" placeholder="18">

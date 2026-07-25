@@ -70,8 +70,8 @@ class pilotevoletgarage extends eqLogic {
                 $needSync = true;
             }
         }
-        $imp = $this->getCmd(null, 'impulsion');
-        if (is_object($imp) && $imp->getGeneric_type() !== ($mode === 'garage' ? 'GB_TOGGLE' : '')) {
+        $ouv = $this->getCmd(null, 'ouvrir');
+        if (is_object($ouv) && $ouv->getGeneric_type() !== ($mode === 'volet' ? 'FLAP_UP' : 'GB_OPEN')) {
             $needSync = true;
         }
         if ($needSync) {
@@ -158,12 +158,15 @@ class pilotevoletgarage extends eqLogic {
         $hk->save();
 
         // --- Actions --------------------------------------------------
-        // Mode garage : Impulsion = GB_TOGGLE (un appui cycle ouvre/stop/ferme).
-        // Mode volet  : Ouvrir/Fermer/Stop = FLAP_UP/DOWN/STOP + curseur position.
-        $this->createAction('ouvrir', __('Ouvrir', __FILE__), $mode === 'volet' ? 'FLAP_UP' : '', $etatId, 100);
-        $this->createAction('fermer', __('Fermer', __FILE__), $mode === 'volet' ? 'FLAP_DOWN' : '', $etatId, 0);
+        // Mode garage : Ouvrir=GB_OPEN / Fermer=GB_CLOSE → Apple Home transmet
+        // l'intention (ouvrir vs fermer), ce qui permet d'envoyer le bon nombre
+        // d'impulsions (le moteur séquentiel en demande 2 pour fermer depuis
+        // l'ouverture). Impulsion reste le contrôle brut du dashboard.
+        // Mode volet : Ouvrir/Fermer/Stop = FLAP_UP/DOWN/STOP + curseur position.
+        $this->createAction('ouvrir', __('Ouvrir', __FILE__), $mode === 'volet' ? 'FLAP_UP' : 'GB_OPEN', $etatId, 100);
+        $this->createAction('fermer', __('Fermer', __FILE__), $mode === 'volet' ? 'FLAP_DOWN' : 'GB_CLOSE', $etatId, 0);
         $this->createAction('stop', __('Stop', __FILE__), $mode === 'volet' ? 'FLAP_STOP' : '', $etatId, null);
-        $this->createAction('impulsion', __('Impulsion', __FILE__), $mode === 'garage' ? 'GB_TOGGLE' : '', $etatId, null);
+        $this->createAction('impulsion', __('Impulsion', __FILE__), '', $etatId, null);
 
         // --- Action : Position (curseur) — utile en mode volet ---------
         $pos = $this->getCmd(null, 'position');
@@ -476,42 +479,58 @@ class pilotevoletgarage extends eqLogic {
      * ouverture ; sinon envoie une impulsion et estime une ouverture.
      * Par sécurité on ne ré-inverse jamais une porte en train de fermer :
      * on l'arrête d'abord. */
-    public function actionOuvrir() {
-        $dirOpen = $this->dirToOpen();
-        if ($this->getCache('moving', 0)) {
-            if ($this->getCache('dir', self::DIR_UP) === $dirOpen) {
-                return; // déjà en ouverture
-            }
-            $this->pulse();      // en fermeture → on stoppe (sécurité)
-            $this->stopMove();
-            $this->refreshEtat();
-            return;
-        }
-        if ($this->openness() >= 100) {
-            return; // déjà ouvert
+    /* Deux impulsions espacées : nécessaire au moteur séquentiel pour repartir
+     * dans l'autre sens (la 1re est absorbée = stop, la 2e lance le mouvement). */
+    private function doublePulse() {
+        $this->pulse();
+        $gap = (int) $this->getConfiguration('double_gap_ms', 1200);
+        if ($gap > 0) {
+            usleep($gap * 1000);
         }
         $this->pulse();
-        $this->startMove($dirOpen);
+    }
+
+    /* Ouvrir : 1 impulsion depuis fermé/arrêt, 2 pour inverser une fermeture. */
+    public function actionOuvrir() {
+        $moving  = $this->getCache('moving', 0);
+        $opening = $moving && $this->opennessIncreasing();
+        $closing = $moving && !$this->opennessIncreasing();
+        $o = $this->openness();
+        if ($opening) {
+            return; // déjà en ouverture
+        }
+        if (!$moving && $o >= 100) {
+            return; // déjà ouvert
+        }
+        if ($closing) {
+            $this->doublePulse(); // inverser une fermeture : stop + ouvre
+        } else {
+            $this->pulse();       // depuis fermé/arrêt : une impulsion ouvre
+        }
+        $this->startMove($this->dirToOpen());
         $this->refreshEtat();
     }
 
-    /* Fermer (meilleur effort), symétrique de actionOuvrir(). */
+    /* Fermer : 2 impulsions si la porte est ouverte ou en ouverture (le moteur
+     * séquentiel en a besoin pour repartir en fermeture), 1 depuis un arrêt
+     * intermédiaire. */
     public function actionFermer() {
-        $dirClose = $this->dirToClose();
-        if ($this->getCache('moving', 0)) {
-            if ($this->getCache('dir', self::DIR_UP) === $dirClose) {
-                return; // déjà en fermeture
-            }
-            $this->pulse();      // en ouverture → on stoppe (sécurité)
-            $this->stopMove();
-            $this->refreshEtat();
-            return;
+        $moving  = $this->getCache('moving', 0);
+        $opening = $moving && $this->opennessIncreasing();
+        $closing = $moving && !$this->opennessIncreasing();
+        $o = $this->openness();
+        if ($closing) {
+            return; // déjà en fermeture
         }
-        if ($this->openness() <= 0) {
+        if (!$moving && $o <= 0) {
             return; // déjà fermé
         }
-        $this->pulse();
-        $this->startMove($dirClose);
+        if ($opening || (!$moving && $o >= 100)) {
+            $this->doublePulse(); // en ouverture ou butée ouverte : 2 impulsions
+        } else {
+            $this->pulse();       // arrêt intermédiaire : 1 impulsion
+        }
+        $this->startMove($this->dirToClose());
         $this->refreshEtat();
     }
 
