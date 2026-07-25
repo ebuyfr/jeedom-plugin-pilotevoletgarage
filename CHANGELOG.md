@@ -3,6 +3,10 @@
 Toutes les évolutions notables de ce plugin sont consignées ici.
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/), versionnement [SemVer](https://semver.org/lang/fr/).
 
+## [0.7.1] - 2026-07-25
+### Corrigé
+- **Apple Home : état « fermé »/« ouvert » en retard de 10-15 s** en fin de course. Un mouvement programme désormais une tâche détachée qui pousse l'état final à l'échéance du temps de course, sans attendre le cron (1 min). Le cron reste en filet de sécurité (dégradation gracieuse si `exec` indisponible).
+
 ## [0.7.0] - 2026-07-25
 ### Corrigé
 - **Décompte du mouvement saccadé/en retard** : le widget restait figé sur le % de départ puis sautait à 0/100 (parfois ~10 s après la porte réelle), faute de mise à jour temps réel entre deux passages du cron (1 min). Le widget **anime désormais la porte côté navigateur** à la vitesse du temps de course : ouverture/fermeture fluides et arrêt à l'heure. Pendant un mouvement, le serveur pousse la cible (0/100) et transmet le temps de course au widget (paramètre `travel`, réglé automatiquement).
@@ -61,6 +65,7 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/), versionne
 - Délégation aux commandes Z-Wave JS existantes (`execCmd`), impulsion unique séquentielle, état estimé par temps de course.
 - Commandes : État, État (texte), Ouvrir, Fermer, Stop, Impulsion, Rafraîchir.
 
+[0.7.1]: https://github.com/ebuyfr/jeedom-plugin-pilotevoletgarage/releases/tag/v0.7.1
 [0.7.0]: https://github.com/ebuyfr/jeedom-plugin-pilotevoletgarage/releases/tag/v0.7.0
 [0.6.0]: https://github.com/ebuyfr/jeedom-plugin-pilotevoletgarage/releases/tag/v0.6.0
 [0.5.0]: https://github.com/ebuyfr/jeedom-plugin-pilotevoletgarage/releases/tag/v0.5.0

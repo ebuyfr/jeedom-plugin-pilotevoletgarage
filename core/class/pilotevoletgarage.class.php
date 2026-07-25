@@ -279,6 +279,29 @@ class pilotevoletgarage extends eqLogic {
         $this->setCache('dir', $dir);
         $this->setCache('start_ts', microtime(true));
         $this->setCache('moving', 1);
+        $this->scheduleSettle();
+    }
+
+    /*
+     * Programme, en tâche détachée, la mise à jour de l'état final quand le
+     * mouvement aura atteint la butée — pour qu'Apple Home (qui lit l'état
+     * serveur) affiche fermé/ouvert à l'heure, sans attendre le cron (1 min).
+     * Dégradation gracieuse : si exec est indisponible, le cron s'en charge.
+     */
+    private function scheduleSettle() {
+        if (!$this->getCache('moving', 0)) {
+            return;
+        }
+        $travel = max(1, (int) $this->getConfiguration('travel_time', 18));
+        $pos = $this->currentPos();
+        $dir = $this->getCache('dir', self::DIR_UP);
+        $remain = ($dir === self::DIR_UP) ? ((100 - $pos) / 100.0 * $travel) : ($pos / 100.0 * $travel);
+        $sec = max(1, (int) ceil($remain) + 1); // petite marge
+        $script = realpath(__DIR__ . '/../../resources/settle.php');
+        if ($script === false || !function_exists('exec')) {
+            return;
+        }
+        @exec('(sleep ' . $sec . '; php ' . escapeshellarg($script) . ' ' . (int) $this->getId() . ') >/dev/null 2>&1 &');
     }
 
     /* Arrête le mouvement estimé et fige la position. */
