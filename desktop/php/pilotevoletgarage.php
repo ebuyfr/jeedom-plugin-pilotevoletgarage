@@ -134,6 +134,39 @@ $eqLogics = eqLogic::byType($plugin->getId());
                             </div>
                         </div>
 
+                        <legend><i class="fas fa-compress-arrows-alt"></i> {{Fins de course (optionnel)}}</legend>
+                        <div class="alert alert-info">
+                            {{Si un contact (ILS/reed) signale la position fermée et/ou ouverte, le plugin recale l'état réel dès le déclenchement (supprime la dérive de l'estimation). Facultatif — laisser désactivé si non câblé.}}
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label">{{Utiliser des fins de course}}</label>
+                            <div class="col-sm-6" style="padding-top:7px;">
+                                <input type="checkbox" class="eqLogicAttr" data-l1key="configuration" data-l2key="use_limits">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label">{{Contact « fermé »}}<sup><i class="fas fa-question-circle tooltips" title="{{Commande info binaire active (1) quand la porte est complètement fermée. Optionnel.}}"></i></sup></label>
+                            <div class="col-sm-6">
+                                <div class="input-group">
+                                    <input type="text" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="cmd_limit_closed" placeholder="{{id ou #commande# info (optionnel)}}">
+                                    <span class="input-group-btn">
+                                        <a class="btn btn-default listInfoAction" data-l2key="cmd_limit_closed" title="{{Choisir une commande}}"><i class="fas fa-list-ul"></i></a>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label">{{Contact « ouvert »}}<sup><i class="fas fa-question-circle tooltips" title="{{Commande info binaire active (1) quand la porte est complètement ouverte. Optionnel.}}"></i></sup></label>
+                            <div class="col-sm-6">
+                                <div class="input-group">
+                                    <input type="text" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="cmd_limit_open" placeholder="{{id ou #commande# info (optionnel)}}">
+                                    <span class="input-group-btn">
+                                        <a class="btn btn-default listInfoAction" data-l2key="cmd_limit_open" title="{{Choisir une commande}}"><i class="fas fa-list-ul"></i></a>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
                         <legend><i class="fas fa-sliders-h"></i> {{Temporisation}}</legend>
                         <div class="form-group">
                             <label class="col-sm-3 control-label">{{Durée d'impulsion (ms)}}<sup><i class="fas fa-question-circle tooltips" title="{{Temps entre le ON et le OFF du relais. Typiquement 500 à 800 ms. Mettre 0 si le relais du FGBS-222 est en mode auto-off/momentané : le OFF n'est alors pas envoyé (évite une double impulsion).}}"></i></sup></label>

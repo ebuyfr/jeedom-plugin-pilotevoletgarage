@@ -59,3 +59,11 @@ $('body').off('click', '.listCmdAction').on('click', '.listCmdAction', function 
         $('.eqLogicAttr[data-l2key=' + l2key + ']').value(result.human);
     });
 });
+
+/* Sélecteur de commande INFO (contacts de fin de course). */
+$('body').off('click', '.listInfoAction').on('click', '.listInfoAction', function () {
+    var l2key = $(this).attr('data-l2key');
+    jeedom.cmd.getSelectModal({cmd: {type: 'info'}}, function (result) {
+        $('.eqLogicAttr[data-l2key=' + l2key + ']').value(result.human);
+    });
+});

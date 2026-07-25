@@ -48,6 +48,18 @@ class pilotevoletgarage extends eqLogic {
         }
     }
 
+    /* Callback des listeners de fin de course (voir manageLimitListeners). */
+    public static function limitEvent($_options) {
+        $id = isset($_options['eqLogic_id']) ? $_options['eqLogic_id'] : 0;
+        $eqLogic = eqLogic::byId($id);
+        if (is_object($eqLogic) && method_exists($eqLogic, 'onLimit')) {
+            $eqLogic->onLimit(
+                isset($_options['kind']) ? $_options['kind'] : '',
+                isset($_options['value']) ? $_options['value'] : null
+            );
+        }
+    }
+
     /*
      * Auto-réparation (appelée par le cron) : ré-applique la configuration des
      * commandes si un équipement existant est en retard sur le code (widget
@@ -224,6 +236,84 @@ class pilotevoletgarage extends eqLogic {
 
         // Initialise la valeur des commandes info (dont l'état HomeKit).
         $this->refreshEtat();
+
+        // (Re)configure les listeners de fin de course selon la configuration.
+        $this->manageLimitListeners();
+    }
+
+    /* ------------------- Fins de course (optionnelles) -------------- */
+
+    /* (Re)crée les listeners temps réel sur les commandes de fin de course. */
+    private function manageLimitListeners() {
+        foreach (listener::byClassAndFunction('pilotevoletgarage', 'limitEvent') as $l) {
+            if ($l->getOption('eqLogic_id') == $this->getId()) {
+                $l->remove();
+            }
+        }
+        if ($this->getConfiguration('use_limits', '0') !== '1') {
+            return;
+        }
+        foreach (array('closed' => 'cmd_limit_closed', 'open' => 'cmd_limit_open') as $kind => $conf) {
+            $cmd = $this->resolveCmd($conf);
+            if (!is_object($cmd)) {
+                continue;
+            }
+            $l = new listener();
+            $l->setClass('pilotevoletgarage');
+            $l->setFunction('limitEvent');
+            $l->addEvent($cmd->getId());
+            $l->setOption('eqLogic_id', $this->getId());
+            $l->setOption('kind', $kind);
+            $l->save();
+        }
+    }
+
+    /* Nettoyage des listeners à la suppression de l'équipement. */
+    public function preRemove() {
+        foreach (listener::byClassAndFunction('pilotevoletgarage', 'limitEvent') as $l) {
+            if ($l->getOption('eqLogic_id') == $this->getId()) {
+                $l->remove();
+            }
+        }
+    }
+
+    /* Une valeur de contact « active » (butée atteinte). */
+    private function isActive($v) {
+        return ($v == 1 || $v === true || $v === '1' || $v === 'on' || $v === 'true');
+    }
+
+    /* Appelée par le listener quand un contact de fin de course change. */
+    public function onLimit($kind, $value) {
+        if ($this->isActive($value)) {
+            // Butée atteinte : on recale l'état réel (supprime la dérive).
+            $this->setCache('moving', 0);
+            $this->setCache('target_open', '');
+            if ($kind === 'closed') {
+                $this->setCache('pos', $this->opennessToPos(0));
+                $this->setCache('open_since', '');
+            } else {
+                $this->setCache('pos', $this->opennessToPos(100));
+            }
+        } else {
+            // Le contact se relâche : la porte quitte la butée → sens déterministe.
+            $this->startMove($kind === 'closed' ? $this->dirToOpen() : $this->dirToClose());
+        }
+        $this->refreshEtat();
+    }
+
+    /* Recalage depuis l'état courant des contacts (filet, ex. au démarrage). */
+    private function checkLimits() {
+        if ($this->getConfiguration('use_limits', '0') !== '1' || $this->getCache('moving', 0)) {
+            return;
+        }
+        $closed = $this->resolveCmd('cmd_limit_closed');
+        if (is_object($closed) && $this->isActive($closed->execCmd()) && $this->openness() > 0) {
+            $this->setCache('pos', $this->opennessToPos(0));
+        }
+        $open = $this->resolveCmd('cmd_limit_open');
+        if (is_object($open) && $this->isActive($open->execCmd()) && $this->openness() < 100) {
+            $this->setCache('pos', $this->opennessToPos(100));
+        }
     }
 
     /* Crée/maj une commande action liée à l'info d'état */
@@ -404,6 +494,8 @@ class pilotevoletgarage extends eqLogic {
      * on l'arrête proprement et on cale la position sur 0 ou 100.
      */
     public function tickEstimation() {
+        // Recalage périodique depuis les fins de course (si configurées).
+        $this->checkLimits();
         if ($this->getCache('moving', 0)) {
             $o = $this->openness();
             $opening = $this->opennessIncreasing();

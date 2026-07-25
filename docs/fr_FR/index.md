@@ -57,6 +57,10 @@ Après changement de mode : sauvegarder l'équipement puis **redémarrer le dém
 
 Côté Homebridge (plugin homebridge-jeedom) : inclure l'équipement dans les objets remontés, puis dans Apple Home la tuile « porte de garage » ouvre/ferme via une impulsion et reflète l'état estimé (ouvert / fermé / en mouvement).
 
+## Fins de course (optionnel)
+
+Pour **sécuriser l'état réel** et supprimer la dérive de l'estimation, on peut référencer une commande **info binaire** (contact ILS/reed via Z-Wave JS) active quand la porte est **fermée** et/ou **ouverte** (config *Utiliser des fins de course*). Le plugin recale l'état dès le déclenchement (réaction temps réel via un *listener*, plus une relecture périodique au cron en filet de sécurité). L'état sécurisé remonte partout, **y compris Apple Home**. Bonus : avec les contacts, le sens de déplacement devient déterministe.
+
 ## Limites
 
-Avec un **bouton unique séquentiel** (Ouvre → Stop → Ferme → Stop), il est physiquement impossible de garantir une direction. Seule **Impulsion** est certaine. Ouvrir / Fermer / Stop se basent sur l'état estimé, qui peut se désynchroniser (ex. obstacle, commande télécommande hors Jeedom). Un capteur de fin de course (ILS/reed sur une entrée du FGBS-222) supprimerait cette incertitude — évolution possible.
+Sans fin de course, avec un **bouton unique séquentiel** (Ouvre → Stop → Ferme → Stop), il est physiquement impossible de garantir une direction : seule **Impulsion** est certaine, et Ouvrir / Fermer / Stop se basent sur l'état estimé (temps de course), qui peut se désynchroniser (obstacle, télécommande hors Jeedom). Câbler un contact de fin de course lève cette incertitude.

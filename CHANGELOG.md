@@ -3,6 +3,13 @@
 Toutes les évolutions notables de ce plugin sont consignées ici.
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/), versionnement [SemVer](https://semver.org/lang/fr/).
 
+## [0.12.0] - 2026-07-25
+### Ajouté
+- **Contacts de fin de course** (optionnels, activables) : référencer une commande info binaire pour la position **fermée** et/ou **ouverte** (ILS/reed via Z-Wave JS). Le plugin **recale l'état réel** dès le déclenchement (supprime la dérive d'estimation), et l'état sécurisé remonte partout — y compris Apple Home (`etat_hk`).
+  - **Temps réel** via un *listener* + **filet périodique** (relecture au cron, ex. au démarrage).
+  - **Bonus** : avec les contacts, le sens devient déterministe (un contact « fermé » qui se relâche ⇒ ouverture certaine ; « ouvert » qui se relâche ⇒ fermeture).
+  - Nettoyage des listeners à la suppression de l'équipement.
+
 ## [0.11.0] - 2026-07-25
 ### Ajouté
 - **Affichages de temps sur le widget** (activables/désactivables) :
@@ -114,6 +121,7 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/), versionne
 - Délégation aux commandes Z-Wave JS existantes (`execCmd`), impulsion unique séquentielle, état estimé par temps de course.
 - Commandes : État, État (texte), Ouvrir, Fermer, Stop, Impulsion, Rafraîchir.
 
+[0.12.0]: https://github.com/ebuyfr/jeedom-plugin-pilotevoletgarage/releases/tag/v0.12.0
 [0.11.0]: https://github.com/ebuyfr/jeedom-plugin-pilotevoletgarage/releases/tag/v0.11.0
 [0.10.1]: https://github.com/ebuyfr/jeedom-plugin-pilotevoletgarage/releases/tag/v0.10.1
 [0.10.0]: https://github.com/ebuyfr/jeedom-plugin-pilotevoletgarage/releases/tag/v0.10.0
