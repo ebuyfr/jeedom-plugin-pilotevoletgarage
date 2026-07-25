@@ -3,6 +3,10 @@
 Toutes les évolutions notables de ce plugin sont consignées ici.
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/), versionnement [SemVer](https://semver.org/lang/fr/).
 
+## [0.9.2] - 2026-07-25
+### Corrigé
+- **Chrono d'estimation plus précis** : l'origine du chrono est désormais l'instant de l'**appui** (impulsion ON) au lieu d'être posée après le OFF (~600 ms plus tard), ce qui décalait légèrement la position estimée (pleine ouverture affichée un peu en-dessous de 100 %). `pulse()`/`doublePulse()` renvoient l'instant réel du départ (2e impulsion pour un double appui). Pensez à caler **Temps de course** sur la durée réelle mesurée.
+
 ## [0.9.1] - 2026-07-25
 ### Ajouté
 - Réglage **Fermeture auto après (min)** : si la centrale Somfy referme la porte d'elle-même après un délai, le plugin **reflète cette fermeture dans l'état estimé** (le cron détecte la porte restée pleinement ouverte depuis N min et rejoue une fermeture **sans envoyer d'impulsion** — le moteur agit seul). Apple Home repasse alors en « fermeture » puis « fermé ». `0` = désactivé. Toute commande réarme le minuteur.
@@ -91,6 +95,7 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/), versionne
 - Délégation aux commandes Z-Wave JS existantes (`execCmd`), impulsion unique séquentielle, état estimé par temps de course.
 - Commandes : État, État (texte), Ouvrir, Fermer, Stop, Impulsion, Rafraîchir.
 
+[0.9.2]: https://github.com/ebuyfr/jeedom-plugin-pilotevoletgarage/releases/tag/v0.9.2
 [0.9.1]: https://github.com/ebuyfr/jeedom-plugin-pilotevoletgarage/releases/tag/v0.9.1
 [0.9.0]: https://github.com/ebuyfr/jeedom-plugin-pilotevoletgarage/releases/tag/v0.9.0
 [0.8.2]: https://github.com/ebuyfr/jeedom-plugin-pilotevoletgarage/releases/tag/v0.8.2

@@ -248,11 +248,15 @@ class pilotevoletgarage extends eqLogic {
      * Si le relais est configuré en mode "auto-off/momentané" côté FGBS,
      * l'OFF est simplement redondant et sans effet.
      */
+    /* Envoie une impulsion. Retourne l'instant de l'APPUI (ON), qui correspond
+     * au début réel du mouvement — à utiliser comme origine du chrono d'estimation
+     * (sinon le OFF envoyé après pulse_ms décalerait le départ de ~600 ms). */
     private function pulse() {
         $on = $this->resolveCmd('cmd_pulse_on');
         if (!is_object($on)) {
             throw new Exception(__('Commande relais ON non configurée sur ', __FILE__) . $this->getHumanName());
         }
+        $t = microtime(true);
         $on->execCmd();
         $ms = (int) $this->getConfiguration('pulse_ms', 600);
         if ($ms > 0) {
@@ -263,6 +267,7 @@ class pilotevoletgarage extends eqLogic {
             }
         }
         log::add('pilotevoletgarage', 'info', 'Impulsion envoyée : ' . $this->getHumanName());
+        return $t;
     }
 
     /* ------------------------- Estimation d'état -------------------- */
@@ -306,10 +311,12 @@ class pilotevoletgarage extends eqLogic {
     /* Démarre un mouvement estimé dans la direction voulue.
      * $target (taux d'ouverture 0-100) = position intermédiaire visée, ou '' pour
      * aller jusqu'à la butée. */
-    private function startMove($dir, $target = '') {
+    private function startMove($dir, $target = '', $startTs = null) {
         $this->setCache('pos', $this->currentPos());
         $this->setCache('dir', $dir);
-        $this->setCache('start_ts', microtime(true));
+        // Origine du chrono = instant de l'appui si fourni (mouvement réel),
+        // sinon maintenant (ex. fermeture auto Somfy sans impulsion).
+        $this->setCache('start_ts', ($startTs === null) ? microtime(true) : $startTs);
         $this->setCache('moving', 1);
         $this->setCache('target_open', ($target === '' || $target === null) ? '' : (int) $target);
         // Toute action réarme le minuteur de fermeture automatique Somfy.
@@ -486,7 +493,7 @@ class pilotevoletgarage extends eqLogic {
      * avancer le modèle séquentiel (arrête si en mouvement, sinon repart
      * dans le sens opposé au dernier mouvement — logique du bouton unique). */
     public function actionImpulsion() {
-        $this->pulse();
+        $t = $this->pulse();
         if ($this->getCache('moving', 0)) {
             $this->stopMove();
         } else {
@@ -495,7 +502,7 @@ class pilotevoletgarage extends eqLogic {
             $dir  = ($last === self::DIR_UP) ? self::DIR_DOWN : self::DIR_UP;
             if ($pos >= 100) $dir = self::DIR_DOWN;
             if ($pos <= 0)   $dir = self::DIR_UP;
-            $this->startMove($dir);
+            $this->startMove($dir, '', $t);
         }
         $this->refreshEtat();
     }
@@ -512,7 +519,7 @@ class pilotevoletgarage extends eqLogic {
         if ($gap > 0) {
             usleep($gap * 1000);
         }
-        $this->pulse();
+        return $this->pulse(); // le mouvement réel démarre à la 2e impulsion
     }
 
     /* Ouvrir : 1 impulsion depuis fermé/arrêt, 2 pour inverser une fermeture. */
@@ -528,11 +535,11 @@ class pilotevoletgarage extends eqLogic {
             return; // déjà ouvert
         }
         if ($closing) {
-            $this->doublePulse(); // inverser une fermeture : stop + ouvre
+            $t = $this->doublePulse(); // inverser une fermeture : stop + ouvre
         } else {
-            $this->pulse();       // depuis fermé/arrêt : une impulsion ouvre
+            $t = $this->pulse();       // depuis fermé/arrêt : une impulsion ouvre
         }
-        $this->startMove($this->dirToOpen());
+        $this->startMove($this->dirToOpen(), '', $t);
         $this->refreshEtat();
     }
 
@@ -551,11 +558,11 @@ class pilotevoletgarage extends eqLogic {
             return; // déjà fermé
         }
         if ($opening || (!$moving && $o >= 100)) {
-            $this->doublePulse(); // en ouverture ou butée ouverte : 2 impulsions
+            $t = $this->doublePulse(); // en ouverture ou butée ouverte : 2 impulsions
         } else {
-            $this->pulse();       // arrêt intermédiaire : 1 impulsion
+            $t = $this->pulse();       // arrêt intermédiaire : 1 impulsion
         }
-        $this->startMove($this->dirToClose());
+        $this->startMove($this->dirToClose(), '', $t);
         $this->refreshEtat();
     }
 
@@ -589,8 +596,8 @@ class pilotevoletgarage extends eqLogic {
             $cur = $this->openness();
         }
         $dir = ($target > $cur) ? $this->dirToOpen() : $this->dirToClose();
-        $this->pulse();
-        $this->startMove($dir, $target);
+        $t = $this->pulse();
+        $this->startMove($dir, $target, $t);
         $this->refreshEtat();
     }
 }
