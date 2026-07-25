@@ -312,6 +312,8 @@ class pilotevoletgarage extends eqLogic {
         $this->setCache('start_ts', microtime(true));
         $this->setCache('moving', 1);
         $this->setCache('target_open', ($target === '' || $target === null) ? '' : (int) $target);
+        // Toute action réarme le minuteur de fermeture automatique Somfy.
+        $this->setCache('open_since', '');
         $this->scheduleSettle();
     }
 
@@ -379,6 +381,29 @@ class pilotevoletgarage extends eqLogic {
                 $this->setCache('target_open', '');
             }
         }
+
+        // Fermeture automatique Somfy : si la porte est restée pleinement ouverte
+        // (et à l'arrêt) plus longtemps que le délai configuré, la centrale Somfy
+        // la referme physiquement d'elle-même. On reflète alors l'estimation de
+        // fermeture SANS envoyer d'impulsion (le moteur agit seul).
+        if (!$this->getCache('moving', 0)) {
+            if ($this->openness() >= 100) {
+                $since = $this->getCache('open_since', '');
+                if ($since === '' || $since === null) {
+                    $this->setCache('open_since', microtime(true));
+                } else {
+                    $autoMin = (int) $this->getConfiguration('auto_close_min', 0);
+                    if ($autoMin > 0 && (microtime(true) - (float) $since) >= $autoMin * 60) {
+                        $this->setCache('open_since', '');
+                        $this->startMove($this->dirToClose()); // sans pulse : le Somfy referme seul
+                        log::add('pilotevoletgarage', 'info', 'Fermeture automatique Somfy reflétée sur ' . $this->getHumanName());
+                    }
+                }
+            } else {
+                $this->setCache('open_since', '');
+            }
+        }
+
         // Toujours rafraîchir : garde l'état HomeKit alimenté même au repos.
         $this->refreshEtat();
     }

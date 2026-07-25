@@ -155,6 +155,13 @@ $eqLogics = eqLogic::byType($plugin->getId());
                             </div>
                         </div>
                         <div class="form-group">
+                            <label class="col-sm-3 control-label">{{Fermeture auto après (min)}}<sup><i class="fas fa-question-circle tooltips" title="{{Si la centrale Somfy referme la porte toute seule après un délai, indiquez-le ici (en minutes) pour que l'état estimé suive (0 = désactivé). Le plugin n'envoie AUCUNE impulsion : il reflète juste la fermeture automatique du moteur.}}"></i></sup></label>
+                            <div class="col-sm-3">
+                                <input type="number" min="0" step="1" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="auto_close_min" placeholder="0">
+                            </div>
+                            <div class="col-sm-5"><span class="help-block" style="margin-top:7px;">{{0 = désactivé. Ex. Somfy réglé sur 3 min → mettre 3.}}</span></div>
+                        </div>
+                        <div class="form-group">
                             <label class="col-sm-3 control-label">{{Inverser ouvert/fermé}}<sup><i class="fas fa-question-circle tooltips" title="{{Inverse la sémantique ouvert/fermé partout (widget, état texte, état HomeKit). À activer si l'état affiché est à l'envers par rapport à la réalité.}}"></i></sup></label>
                             <div class="col-sm-6" style="padding-top:7px;">
                                 <input type="checkbox" class="eqLogicAttr" data-l1key="configuration" data-l2key="invert">

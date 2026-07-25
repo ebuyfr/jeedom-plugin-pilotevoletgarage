@@ -22,6 +22,7 @@ Comme aucune fin de course n'est câblée, l'état de la porte est **estimé** �
 | **Commande relais OFF** | Commande action qui **ouvre** le relais (ex. « STOP », `37-5-targetValue-false`). Laisser vide si le relais est en mode auto-off. |
 | **Durée d'impulsion (ms)** | Temps entre le ON et le OFF. Typiquement 500 à 800 ms. Défaut : 600. **Relais en auto-off/momentané : mettre 0** (le OFF n'est pas envoyé, évite une double impulsion). |
 | **Temps de course complet (s)** | Temps porte fermée → ouverte. Sert au calcul de l'état estimé. Défaut : 18. |
+| **Fermeture auto après (min)** | Si la centrale Somfy referme seule après un délai, l'indiquer ici (min) pour que l'état estimé suive. `0` = désactivé. Le plugin n'envoie aucune impulsion, il reflète juste la fermeture. |
 | **Inverser ouvert/fermé** | Inverse la sémantique ouvert/fermé partout (widget, texte, HomeKit). À cocher si l'état s'affiche à l'envers. |
 
 Renseignez soit l'**id numérique** de la commande, soit sa **chaîne humaine** `#[objet][équipement][commande]#` (via le bouton de sélection).

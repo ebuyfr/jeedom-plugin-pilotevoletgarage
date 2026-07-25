@@ -3,6 +3,10 @@
 Toutes les évolutions notables de ce plugin sont consignées ici.
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/), versionnement [SemVer](https://semver.org/lang/fr/).
 
+## [0.9.1] - 2026-07-25
+### Ajouté
+- Réglage **Fermeture auto après (min)** : si la centrale Somfy referme la porte d'elle-même après un délai, le plugin **reflète cette fermeture dans l'état estimé** (le cron détecte la porte restée pleinement ouverte depuis N min et rejoue une fermeture **sans envoyer d'impulsion** — le moteur agit seul). Apple Home repasse alors en « fermeture » puis « fermé ». `0` = désactivé. Toute commande réarme le minuteur.
+
 ## [0.9.0] - 2026-07-25
 ### Modifié / Corrigé
 - **Fermeture depuis l'ouverture complète (Apple Home)** : le moteur séquentiel demande **2 impulsions** pour repartir en fermeture (la 1re est absorbée). Pour que Siri/Apple Home transmette l'intention (ouvrir ≠ fermer), Ouvrir passe en `GB_OPEN` et Fermer en `GB_CLOSE` (Impulsion n'a plus de générique). Le plugin envoie alors le bon nombre d'impulsions : **1 pour ouvrir depuis fermé, 2 pour fermer depuis l'ouverture ou en cours d'ouverture** (et 2 pour inverser un mouvement).
@@ -87,6 +91,7 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/), versionne
 - Délégation aux commandes Z-Wave JS existantes (`execCmd`), impulsion unique séquentielle, état estimé par temps de course.
 - Commandes : État, État (texte), Ouvrir, Fermer, Stop, Impulsion, Rafraîchir.
 
+[0.9.1]: https://github.com/ebuyfr/jeedom-plugin-pilotevoletgarage/releases/tag/v0.9.1
 [0.9.0]: https://github.com/ebuyfr/jeedom-plugin-pilotevoletgarage/releases/tag/v0.9.0
 [0.8.2]: https://github.com/ebuyfr/jeedom-plugin-pilotevoletgarage/releases/tag/v0.8.2
 [0.8.1]: https://github.com/ebuyfr/jeedom-plugin-pilotevoletgarage/releases/tag/v0.8.1
