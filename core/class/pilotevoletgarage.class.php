@@ -22,6 +22,14 @@ class pilotevoletgarage extends eqLogic {
     const DIR_UP   = 'up';
     const DIR_DOWN = 'down';
 
+    // Valeurs d'état attendues par homebridge-jeedom (defaults customizedValues
+    // d'une porte de garage : voir index.js ligne ~3592). PAS l'énum HomeKit 0-4.
+    const HK_OPEN    = 255;
+    const HK_OPENING = 254;
+    const HK_STOPPED = 253;
+    const HK_CLOSING = 252;
+    const HK_CLOSED  = 0;
+
     /* *********************** Méthodes statiques *********************** */
 
     /*
@@ -57,8 +65,8 @@ class pilotevoletgarage extends eqLogic {
                 $needSync = true;
             }
         }
-        $ouv = $this->getCmd(null, 'ouvrir');
-        if (is_object($ouv) && $ouv->getGeneric_type() !== 'GB_OPEN') {
+        $imp = $this->getCmd(null, 'impulsion');
+        if (is_object($imp) && $imp->getGeneric_type() !== 'GB_TOGGLE') {
             $needSync = true;
         }
         if ($needSync) {
@@ -135,15 +143,12 @@ class pilotevoletgarage extends eqLogic {
         $hk->save();
 
         // --- Actions --------------------------------------------------
-        // Ouvrir = GB_OPEN, Fermer = GB_CLOSE : Apple Home indique explicitement
-        // le sens voulu, ce qui rend l'estimation (et donc le visuel HomeKit)
-        // fiable malgré le bouton unique. Physiquement les deux envoient la même
-        // impulsion ; seule la direction estimée diffère.
-        $this->createAction('ouvrir', __('Ouvrir', __FILE__), 'GB_OPEN', $etatId, 100);
-        $this->createAction('fermer', __('Fermer', __FILE__), 'GB_CLOSE', $etatId, 0);
+        // Modèle bouton unique : Impulsion = GB_TOGGLE (un appui cycle
+        // ouvre/stop/ferme), fidèle au fonctionnement réel du moteur Somfy.
+        $this->createAction('ouvrir', __('Ouvrir', __FILE__), '', $etatId, 100);
+        $this->createAction('fermer', __('Fermer', __FILE__), '', $etatId, 0);
         $this->createAction('stop', __('Stop', __FILE__), '', $etatId, null);
-        // Impulsion : contrôle brut (dashboard), sans type générique HomeKit.
-        $this->createAction('impulsion', __('Impulsion', __FILE__), '', $etatId, null);
+        $this->createAction('impulsion', __('Impulsion', __FILE__), 'GB_TOGGLE', $etatId, null);
 
         // --- Action : Rafraîchir --------------------------------------
         $refresh = $this->getCmd(null, 'rafraichir');
@@ -336,17 +341,18 @@ class pilotevoletgarage extends eqLogic {
     }
 
     /*
-     * État au format HomeKit CurrentDoorState :
-     * 0=Ouvert, 1=Fermé, 2=Ouverture, 3=Fermeture, 4=Arrêté (partiel).
+     * État aux valeurs attendues par homebridge-jeedom (customizedValues par
+     * défaut d'une porte de garage) : ouvert=255, ouverture=254, arrêté=253,
+     * fermeture=252, fermé=0.
      */
     private function hkState() {
         if ($this->getCache('moving', 0)) {
-            return $this->opennessIncreasing() ? 2 : 3;
+            return $this->opennessIncreasing() ? self::HK_OPENING : self::HK_CLOSING;
         }
         $o = $this->openness();
-        if ($o <= 0)   return 1;
-        if ($o >= 100) return 0;
-        return 4;
+        if ($o <= 0)   return self::HK_CLOSED;
+        if ($o >= 100) return self::HK_OPEN;
+        return self::HK_STOPPED;
     }
 
     private function stateLabel($o) {

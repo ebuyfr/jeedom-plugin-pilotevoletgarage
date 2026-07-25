@@ -3,6 +3,12 @@
 Toutes les évolutions notables de ce plugin sont consignées ici.
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/), versionnement [SemVer](https://semver.org/lang/fr/).
 
+## [0.6.0] - 2026-07-25
+### Corrigé
+- **État HomeKit inversé/incorrect** : les valeurs envoyées ne correspondaient pas à ce qu'attend homebridge-jeedom. Utilisation des valeurs par défaut réelles d'une porte de garage : ouvert=255, ouverture=254, arrêté=253, fermeture=252, **fermé=0** (au lieu de l'énum HomeKit 0-4). Apple Home affiche désormais le bon état sans configuration supplémentaire.
+### Modifié
+- **Retour au modèle bouton unique** : `Impulsion` = `GB_TOGGLE` (un appui cycle ouvre/stop/ferme), fidèle au moteur Somfy. Ouvrir/Fermer n'ont plus `GB_OPEN`/`GB_CLOSE`. Remplace l'approche de la v0.5.0.
+
 ## [0.5.0] - 2026-07-24
 ### Ajouté
 - Option **Inverser ouvert/fermé** : inverse la sémantique (widget, état texte, état HomeKit) si l'état s'affiche à l'envers par rapport à la réalité.
@@ -51,6 +57,7 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/), versionne
 - Délégation aux commandes Z-Wave JS existantes (`execCmd`), impulsion unique séquentielle, état estimé par temps de course.
 - Commandes : État, État (texte), Ouvrir, Fermer, Stop, Impulsion, Rafraîchir.
 
+[0.6.0]: https://github.com/ebuyfr/jeedom-plugin-pilotevoletgarage/releases/tag/v0.6.0
 [0.5.0]: https://github.com/ebuyfr/jeedom-plugin-pilotevoletgarage/releases/tag/v0.5.0
 [0.4.1]: https://github.com/ebuyfr/jeedom-plugin-pilotevoletgarage/releases/tag/v0.4.1
 [0.4.0]: https://github.com/ebuyfr/jeedom-plugin-pilotevoletgarage/releases/tag/v0.4.0
