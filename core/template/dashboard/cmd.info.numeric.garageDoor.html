@@ -85,7 +85,13 @@
           animateTo(root, v, 400, null, staticLabel(v));
         }
       });
-      jeedom.cmd.refreshValue([{ cmd_id: '#id#', value: '#value#', display_value: '#state#', valueDate: '#valueDate#', collectDate: '#collectDate#', alertLevel: '#alertLevel#', unit: '#unite#' }]);
+      // Garde : n'initialise que si le widget est bien présent dans le DOM
+      // (évite une erreur du cœur dans l'aperçu de l'onglet Commandes).
+      try {
+        if (el() !== null) {
+          jeedom.cmd.refreshValue([{ cmd_id: '#id#', value: '#value#', display_value: '#state#', valueDate: '#valueDate#', collectDate: '#collectDate#', alertLevel: '#alertLevel#', unit: '#unite#' }]);
+        }
+      } catch (e) {}
     })();
   </script>
 </div>

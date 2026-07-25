@@ -81,7 +81,11 @@
           animateTo(root, v, 400, null, staticLabel(v));
         }
       });
-      jeedom.cmd.refreshValue([{ cmd_id: '#id#', value: '#value#', display_value: '#state#', valueDate: '#valueDate#', collectDate: '#collectDate#', alertLevel: '#alertLevel#', unit: '#unite#' }]);
+      try {
+        if (el() !== null) {
+          jeedom.cmd.refreshValue([{ cmd_id: '#id#', value: '#value#', display_value: '#state#', valueDate: '#valueDate#', collectDate: '#collectDate#', alertLevel: '#alertLevel#', unit: '#unite#' }]);
+        }
+      } catch (e) {}
     })();
   </script>
 </div>

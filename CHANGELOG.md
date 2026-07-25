@@ -3,6 +3,10 @@
 Toutes les évolutions notables de ce plugin sont consignées ici.
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/), versionnement [SemVer](https://semver.org/lang/fr/).
 
+## [0.8.2] - 2026-07-25
+### Corrigé
+- Erreurs JS (`TypeError ... parentNode ... null`) dans l'aperçu de l'onglet Commandes : l'appel `jeedom.cmd.refreshValue` du widget est désormais protégé (n'agit que si le widget est présent dans le DOM, avec garde try/catch). Sans effet sur le dashboard.
+
 ## [0.8.1] - 2026-07-25
 ### Modifié
 - Mode **Volet** marqué **expérimental** : avec un moteur à bouton unique sans retour de position, le sens ne peut pas être garanti et le positionnement au curseur se désynchronise. Le mode **Porte de garage** reste recommandé. Documentation et libellés clarifiés (câblage 2 contacts ou capteur requis pour une vraie position).
@@ -76,6 +80,7 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/), versionne
 - Délégation aux commandes Z-Wave JS existantes (`execCmd`), impulsion unique séquentielle, état estimé par temps de course.
 - Commandes : État, État (texte), Ouvrir, Fermer, Stop, Impulsion, Rafraîchir.
 
+[0.8.2]: https://github.com/ebuyfr/jeedom-plugin-pilotevoletgarage/releases/tag/v0.8.2
 [0.8.1]: https://github.com/ebuyfr/jeedom-plugin-pilotevoletgarage/releases/tag/v0.8.1
 [0.8.0]: https://github.com/ebuyfr/jeedom-plugin-pilotevoletgarage/releases/tag/v0.8.0
 [0.7.1]: https://github.com/ebuyfr/jeedom-plugin-pilotevoletgarage/releases/tag/v0.7.1
