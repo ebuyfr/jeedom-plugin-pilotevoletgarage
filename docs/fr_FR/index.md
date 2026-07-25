@@ -45,9 +45,12 @@ Paramètres optionnels du widget (onglet *Affichage* de la commande) : `hauteur`
 
 ## Apple Home (Homebridge)
 
-Le plugin est prêt pour **homebridge-jeedom** : il crée une commande info **État HomeKit** (`GARAGE_STATE`) et la commande **Impulsion** porte le type `GB_TOGGLE` (bouton unique). Apple Home affiche un accessoire **porte de garage** : un appui cycle ouvre/stop/ferme, fidèle au moteur Somfy.
+Le plugin est prêt pour **homebridge-jeedom**. Deux modes au choix (config de l'équipement, champ **Mode HomeKit**) :
 
-Valeurs d'état envoyées (defaults homebridge-jeedom, aucune personnalisation requise) : ouvert=255, ouverture=254, arrêté=253, fermeture=252, **fermé=0**.
+- **Porte de garage** (défaut) : accessoire *GarageDoorOpener*. Commande info **État HomeKit** (`GARAGE_STATE`) + **Impulsion** en `GB_TOGGLE` (un appui cycle ouvre/stop/ferme). Valeurs d'état (defaults homebridge-jeedom) : ouvert=255, ouverture=254, arrêté=253, fermeture=252, **fermé=0**.
+- **Volet** : accessoire *WindowCovering* avec **position exacte 0-100 %**. `FLAP_STATE` (position) + `FLAP_UP`/`FLAP_DOWN`/`FLAP_STOP` + curseur **Position** (`FLAP_SLIDER`). Le plugin rejoint au mieux la position visée (moteur puis impulsion de stop à l'arrivée). La précision dépend du temps de course et de la tâche détachée.
+
+Après changement de mode : sauvegarder l'équipement puis **redémarrer le démon Homebridge** (le type d'accessoire change).
 
 Côté Homebridge (plugin homebridge-jeedom) : inclure l'équipement dans les objets remontés, puis dans Apple Home la tuile « porte de garage » ouvre/ferme via une impulsion et reflète l'état estimé (ouvert / fermé / en mouvement).
 

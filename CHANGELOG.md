@@ -3,6 +3,13 @@
 Toutes les évolutions notables de ce plugin sont consignées ici.
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/), versionnement [SemVer](https://semver.org/lang/fr/).
 
+## [0.8.0] - 2026-07-25
+### Ajouté
+- **Choix du mode HomeKit** (config équipement) : **Porte de garage** (ouvert/fermé, défaut) ou **Volet** (WindowCovering, position exacte 0-100 %).
+- Mode volet : commande **Position** (curseur `FLAP_SLIDER`) + `FLAP_STATE`/`FLAP_UP`/`FLAP_DOWN`/`FLAP_STOP`. Le plugin rejoint au mieux la position visée (démarrage moteur puis impulsion de stop à l'arrivée, via l'estimation et le settle détaché). Aux extrémités (0/100), arrêt automatique du moteur.
+### Note
+- Après changement de mode : sauvegarder l'équipement puis **redémarrer le démon Homebridge** (le type d'accessoire change). La position intermédiaire dépend du bon réglage du temps de course et du fonctionnement de la tâche détachée (sinon la porte peut dépasser la cible).
+
 ## [0.7.1] - 2026-07-25
 ### Corrigé
 - **Apple Home : état « fermé »/« ouvert » en retard de 10-15 s** en fin de course. Un mouvement programme désormais une tâche détachée qui pousse l'état final à l'échéance du temps de course, sans attendre le cron (1 min). Le cron reste en filet de sécurité (dégradation gracieuse si `exec` indisponible).
@@ -65,6 +72,7 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/), versionne
 - Délégation aux commandes Z-Wave JS existantes (`execCmd`), impulsion unique séquentielle, état estimé par temps de course.
 - Commandes : État, État (texte), Ouvrir, Fermer, Stop, Impulsion, Rafraîchir.
 
+[0.8.0]: https://github.com/ebuyfr/jeedom-plugin-pilotevoletgarage/releases/tag/v0.8.0
 [0.7.1]: https://github.com/ebuyfr/jeedom-plugin-pilotevoletgarage/releases/tag/v0.7.1
 [0.7.0]: https://github.com/ebuyfr/jeedom-plugin-pilotevoletgarage/releases/tag/v0.7.0
 [0.6.0]: https://github.com/ebuyfr/jeedom-plugin-pilotevoletgarage/releases/tag/v0.6.0

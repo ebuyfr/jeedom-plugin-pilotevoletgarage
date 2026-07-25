@@ -95,6 +95,17 @@ $eqLogics = eqLogic::byType($plugin->getId());
                             </div>
                         </div>
 
+                        <legend><i class="fab fa-apple"></i> {{Apple Home / Homebridge}}</legend>
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label">{{Mode HomeKit}}<sup><i class="fas fa-question-circle tooltips" title="{{Porte de garage = ouvert/fermé (bouton unique). Volet = position exacte 0-100 % avec curseur (au mieux via l'estimation). Après changement, sauvegarder puis redémarrer le démon Homebridge.}}"></i></sup></label>
+                            <div class="col-sm-4">
+                                <select class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="hk_mode">
+                                    <option value="garage">{{Porte de garage (ouvert/fermé)}}</option>
+                                    <option value="volet">{{Volet (position exacte)}}</option>
+                                </select>
+                            </div>
+                        </div>
+
                         <legend><i class="fas fa-plug"></i> {{Relais Z-Wave JS (FGBS-222)}}</legend>
                         <div class="alert alert-info">
                             {{Sélectionnez les commandes Z-Wave JS qui pilotent le relais OUT1 câblé sur le bouton du moteur Somfy. Une impulsion = ON puis OFF après la temporisation.}}

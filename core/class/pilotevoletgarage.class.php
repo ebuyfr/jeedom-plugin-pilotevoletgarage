@@ -56,17 +56,22 @@ class pilotevoletgarage extends eqLogic {
      * de sécurité évite d'avoir à re-sauvegarder l'équipement à la main.
      */
     public function ensureConfig() {
+        $mode = ($this->getConfiguration('hk_mode', 'garage') === 'volet') ? 'volet' : 'garage';
         $etat = $this->getCmd(null, 'etat');
         $hk   = $this->getCmd(null, 'etat_hk');
-        $needSync = !is_object($etat) || !is_object($hk);
+        $needSync = !is_object($etat) || !is_object($hk) || !is_object($this->getCmd(null, 'position'));
         if (is_object($etat)) {
             $t = $etat->getTemplate('dashboard');
             if ($t === '' || $t === 'core::garageDoor') {
                 $needSync = true;
             }
+            // Générique de la commande état selon le mode (FLAP_STATE en volet).
+            if ($etat->getGeneric_type() !== ($mode === 'volet' ? 'FLAP_STATE' : '')) {
+                $needSync = true;
+            }
         }
         $imp = $this->getCmd(null, 'impulsion');
-        if (is_object($imp) && $imp->getGeneric_type() !== 'GB_TOGGLE') {
+        if (is_object($imp) && $imp->getGeneric_type() !== ($mode === 'garage' ? 'GB_TOGGLE' : '')) {
             $needSync = true;
         }
         if ($needSync) {
@@ -86,7 +91,11 @@ class pilotevoletgarage extends eqLogic {
      * Appelée à la sauvegarde de l'équipement ET par le cron (auto-réparation).
      */
     public function syncCommands() {
-        // --- Info : état estimé 0-100 (support du widget porte de garage) ---
+        // Mode d'exposition Apple Home : 'garage' (porte, ouvert/fermé) ou
+        // 'volet' (WindowCovering, position exacte 0-100 %).
+        $mode = ($this->getConfiguration('hk_mode', 'garage') === 'volet') ? 'volet' : 'garage';
+
+        // --- Info : état/position estimé 0-100 (widget + position HomeKit) ---
         $etat = $this->getCmd(null, 'etat');
         if (!is_object($etat)) {
             $etat = new pilotevoletgarageCmd();
@@ -96,9 +105,9 @@ class pilotevoletgarage extends eqLogic {
         }
         $etat->setType('info');
         $etat->setSubType('numeric');
-        // Pas de type générique FLAP_* : sinon homebridge-jeedom exposerait
-        // aussi un volet roulant en doublon dans Apple Home.
-        $etat->setGeneric_type('');
+        // Mode volet : FLAP_STATE = position courante du volet dans Apple Home.
+        // Mode garage : pas de générique ici (l'état passe par etat_hk/GARAGE_STATE).
+        $etat->setGeneric_type($mode === 'volet' ? 'FLAP_STATE' : '');
         $etat->setUnite('%');
         $etat->setIsVisible(1);
         $etat->setIsHistorized(0);
@@ -142,18 +151,36 @@ class pilotevoletgarage extends eqLogic {
         }
         $hk->setType('info');
         $hk->setSubType('numeric');
-        $hk->setGeneric_type('GARAGE_STATE');
+        // GARAGE_STATE seulement en mode garage (sinon pas d'accessoire garage).
+        $hk->setGeneric_type($mode === 'garage' ? 'GARAGE_STATE' : '');
         $hk->setIsVisible(0);
         $hk->setIsHistorized(0);
         $hk->save();
 
         // --- Actions --------------------------------------------------
-        // Modèle bouton unique : Impulsion = GB_TOGGLE (un appui cycle
-        // ouvre/stop/ferme), fidèle au fonctionnement réel du moteur Somfy.
-        $this->createAction('ouvrir', __('Ouvrir', __FILE__), '', $etatId, 100);
-        $this->createAction('fermer', __('Fermer', __FILE__), '', $etatId, 0);
-        $this->createAction('stop', __('Stop', __FILE__), '', $etatId, null);
-        $this->createAction('impulsion', __('Impulsion', __FILE__), 'GB_TOGGLE', $etatId, null);
+        // Mode garage : Impulsion = GB_TOGGLE (un appui cycle ouvre/stop/ferme).
+        // Mode volet  : Ouvrir/Fermer/Stop = FLAP_UP/DOWN/STOP + curseur position.
+        $this->createAction('ouvrir', __('Ouvrir', __FILE__), $mode === 'volet' ? 'FLAP_UP' : '', $etatId, 100);
+        $this->createAction('fermer', __('Fermer', __FILE__), $mode === 'volet' ? 'FLAP_DOWN' : '', $etatId, 0);
+        $this->createAction('stop', __('Stop', __FILE__), $mode === 'volet' ? 'FLAP_STOP' : '', $etatId, null);
+        $this->createAction('impulsion', __('Impulsion', __FILE__), $mode === 'garage' ? 'GB_TOGGLE' : '', $etatId, null);
+
+        // --- Action : Position (curseur) — utile en mode volet ---------
+        $pos = $this->getCmd(null, 'position');
+        if (!is_object($pos)) {
+            $pos = new pilotevoletgarageCmd();
+            $pos->setLogicalId('position');
+            $pos->setEqLogic_id($this->getId());
+            $pos->setName(__('Position', __FILE__));
+        }
+        $pos->setType('action');
+        $pos->setSubType('slider');
+        $pos->setGeneric_type($mode === 'volet' ? 'FLAP_SLIDER' : '');
+        $pos->setIsVisible($mode === 'volet' ? 1 : 0);
+        $pos->setConfiguration('minValue', 0);
+        $pos->setConfiguration('maxValue', 100);
+        if ($etatId !== null) { $pos->setValue($etatId); }
+        $pos->save();
 
         // --- Action : Rafraîchir --------------------------------------
         $refresh = $this->getCmd(null, 'rafraichir');
@@ -273,13 +300,21 @@ class pilotevoletgarage extends eqLogic {
         return $pos;
     }
 
-    /* Démarre un mouvement estimé dans la direction voulue. */
-    private function startMove($dir) {
+    /* Démarre un mouvement estimé dans la direction voulue.
+     * $target (taux d'ouverture 0-100) = position intermédiaire visée, ou '' pour
+     * aller jusqu'à la butée. */
+    private function startMove($dir, $target = '') {
         $this->setCache('pos', $this->currentPos());
         $this->setCache('dir', $dir);
         $this->setCache('start_ts', microtime(true));
         $this->setCache('moving', 1);
+        $this->setCache('target_open', ($target === '' || $target === null) ? '' : (int) $target);
         $this->scheduleSettle();
+    }
+
+    /* Convertit un taux d'ouverture (0-100) en position interne. */
+    private function opennessToPos($o) {
+        return $this->getConfiguration('invert', 0) ? (100 - $o) : $o;
     }
 
     /*
@@ -293,9 +328,11 @@ class pilotevoletgarage extends eqLogic {
             return;
         }
         $travel = max(1, (int) $this->getConfiguration('travel_time', 18));
-        $pos = $this->currentPos();
-        $dir = $this->getCache('dir', self::DIR_UP);
-        $remain = ($dir === self::DIR_UP) ? ((100 - $pos) / 100.0 * $travel) : ($pos / 100.0 * $travel);
+        $o = $this->openness();
+        $opening = $this->opennessIncreasing();
+        $target = $this->getCache('target_open', '');
+        $goal = ($target === '' || $target === null) ? ($opening ? 100 : 0) : (int) $target;
+        $remain = abs($goal - $o) / 100.0 * $travel;
         $sec = max(1, (int) ceil($remain) + 1); // petite marge
         $script = realpath(__DIR__ . '/../../resources/settle.php');
         if ($script === false || !function_exists('exec')) {
@@ -311,6 +348,7 @@ class pilotevoletgarage extends eqLogic {
         $this->setCache('moving', 0);
         // Mémorise la dernière direction parcourue (utile au moteur séquentiel)
         $this->setCache('last_dir', $this->getCache('dir', self::DIR_UP));
+        $this->setCache('target_open', '');
     }
 
     /*
@@ -319,12 +357,23 @@ class pilotevoletgarage extends eqLogic {
      */
     public function tickEstimation() {
         if ($this->getCache('moving', 0)) {
-            $pos = $this->currentPos();
-            $dir = $this->getCache('dir', self::DIR_UP);
-            if (($dir === self::DIR_UP && $pos >= 100) || ($dir === self::DIR_DOWN && $pos <= 0)) {
-                $this->setCache('pos', $dir === self::DIR_UP ? 100 : 0);
+            $o = $this->openness();
+            $opening = $this->opennessIncreasing();
+            $target = $this->getCache('target_open', '');
+            $hasTarget = ($target !== '' && $target !== null);
+            $goal = $hasTarget ? (int) $target : ($opening ? 100 : 0);
+            $reached = $opening ? ($o >= $goal) : ($o <= $goal);
+            if ($reached) {
+                // Position intermédiaire visée : le moteur ne s'arrête pas seul,
+                // il faut lui envoyer une impulsion de stop. Aux butées (0/100),
+                // le moteur s'arrête tout seul.
+                if ($hasTarget && $goal > 0 && $goal < 100) {
+                    $this->pulse();
+                }
+                $this->setCache('pos', $this->opennessToPos($goal));
                 $this->setCache('moving', 0);
-                $this->setCache('last_dir', $dir);
+                $this->setCache('last_dir', $this->getCache('dir', self::DIR_UP));
+                $this->setCache('target_open', '');
             }
         }
         // Toujours rafraîchir : garde l'état HomeKit alimenté même au repos.
@@ -354,12 +403,13 @@ class pilotevoletgarage extends eqLogic {
     /* Pousse l'état estimé vers les commandes info (widget + HomeKit). */
     public function refreshEtat() {
         $o = (int) round($this->openness());
-        // Widget : pendant un mouvement on pousse la CIBLE (0 fermé / 100 ouvert).
-        // Le widget anime lui-même la porte à la vitesse du temps de course
-        // (animation fluide et arrêt à l'heure, sans dépendre du cron 1 min).
-        // À l'arrêt on pousse la position réelle estimée.
+        // Mode garage : pendant un mouvement on pousse la CIBLE (0/100) pour que
+        // le widget anime lui-même à la vitesse du temps de course (fluide, sans
+        // dépendre du cron). Mode volet : on pousse la position RÉELLE, car c'est
+        // la source de CurrentPosition pour Apple Home.
+        $mode = ($this->getConfiguration('hk_mode', 'garage') === 'volet') ? 'volet' : 'garage';
         $display = $o;
-        if ($this->getCache('moving', 0)) {
+        if ($mode === 'garage' && $this->getCache('moving', 0)) {
             $display = $this->opennessIncreasing() ? 100 : 0;
         }
         $etat = $this->getCmd(null, 'etat');
@@ -473,6 +523,32 @@ class pilotevoletgarage extends eqLogic {
         }
         $this->refreshEtat();
     }
+
+    /* Position (curseur, mode volet) : rejoint au mieux le taux d'ouverture visé.
+     * Pour une position intermédiaire, démarre le moteur puis programme une
+     * impulsion de stop à l'arrivée (via le settle détaché / cron). */
+    public function actionPosition($target) {
+        $target = (int) round($target);
+        if ($target < 0) { $target = 0; }
+        if ($target > 100) { $target = 100; }
+        $cur = $this->openness();
+        if (abs($target - $cur) < 2) {
+            return; // déjà à la position visée
+        }
+        if ($target <= 0)   { $this->actionFermer(); return; } // butée basse (arrêt auto)
+        if ($target >= 100) { $this->actionOuvrir(); return; } // butée haute (arrêt auto)
+
+        // Position intermédiaire.
+        if ($this->getCache('moving', 0)) {
+            $this->pulse();          // stoppe le mouvement en cours
+            $this->stopMove();
+            $cur = $this->openness();
+        }
+        $dir = ($target > $cur) ? $this->dirToOpen() : $this->dirToClose();
+        $this->pulse();
+        $this->startMove($dir, $target);
+        $this->refreshEtat();
+    }
 }
 
 class pilotevoletgarageCmd extends cmd {
@@ -497,6 +573,9 @@ class pilotevoletgarageCmd extends cmd {
                 break;
             case 'impulsion':
                 $eqLogic->actionImpulsion();
+                break;
+            case 'position':
+                $eqLogic->actionPosition(isset($_options['slider']) ? $_options['slider'] : 0);
                 break;
             case 'rafraichir':
                 $eqLogic->refreshEtat();
