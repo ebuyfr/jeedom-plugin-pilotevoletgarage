@@ -3,6 +3,12 @@
 Toutes les évolutions notables de ce plugin sont consignées ici.
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/), versionnement [SemVer](https://semver.org/lang/fr/).
 
+## [0.10.0] - 2026-07-25
+### Modifié
+- **Widget en volet roulant** : le tablier ne monte plus au-dessus du linteau pour disparaître ; il **s'enroule vers le haut** (le bord bas remonte) et une **barre (le coffre) reste au-dessus du cadre**. Rendu plus fidèle à un volet.
+### Ajouté
+- Réglage **Style d'enroulement** : **Barre fixe (A)** ou **Enroulement qui grossit (B)** (le coffre s'épaissit à mesure de l'ouverture). Transmis au widget via le paramètre `rollgrow`.
+
 ## [0.9.2] - 2026-07-25
 ### Corrigé
 - **Chrono d'estimation plus précis** : l'origine du chrono est désormais l'instant de l'**appui** (impulsion ON) au lieu d'être posée après le OFF (~600 ms plus tard), ce qui décalait légèrement la position estimée (pleine ouverture affichée un peu en-dessous de 100 %). `pulse()`/`doublePulse()` renvoient l'instant réel du départ (2e impulsion pour un double appui). Pensez à caler **Temps de course** sur la durée réelle mesurée.
@@ -95,6 +101,7 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/), versionne
 - Délégation aux commandes Z-Wave JS existantes (`execCmd`), impulsion unique séquentielle, état estimé par temps de course.
 - Commandes : État, État (texte), Ouvrir, Fermer, Stop, Impulsion, Rafraîchir.
 
+[0.10.0]: https://github.com/ebuyfr/jeedom-plugin-pilotevoletgarage/releases/tag/v0.10.0
 [0.9.2]: https://github.com/ebuyfr/jeedom-plugin-pilotevoletgarage/releases/tag/v0.9.2
 [0.9.1]: https://github.com/ebuyfr/jeedom-plugin-pilotevoletgarage/releases/tag/v0.9.1
 [0.9.0]: https://github.com/ebuyfr/jeedom-plugin-pilotevoletgarage/releases/tag/v0.9.0

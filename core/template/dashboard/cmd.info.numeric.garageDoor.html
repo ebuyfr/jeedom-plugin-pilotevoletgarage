@@ -1,6 +1,8 @@
-<!-- Widget "garageDoor" — porte de garage sectionnelle, animée côté navigateur.
-     Reçoit la CIBLE (0=fermé / 100=ouvert) pendant un mouvement et anime la porte
-     à la vitesse du temps de course (#travel#, en secondes), sans dépendre du cron. -->
+<!-- Widget "garageDoor" — volet roulant animé côté navigateur.
+     Le tablier s'enroule vers le haut (le bord bas remonte) et il reste une barre
+     (le coffre) au-dessus du cadre. Reçoit la CIBLE (0=fermé / 100=ouvert) pendant
+     un mouvement et anime à la vitesse du temps de course (#travel#, secondes).
+     Style d'enroulement via #rollgrow# ('1' = coffre qui grossit). -->
 <div class="cmd cmd-widget #history# #displayHistory#" data-type="info" data-subtype="numeric" data-template="garageDoor" data-cmd_id="#id#" data-cmd_uid="#uid#" data-version="#version#" data-eqLogic_id="#eqLogic_id#" title="#collectDate#">
   <div class="title #hide_name#">
     <div class="cmdName" style="font-weight:bold;">#name_display#</div>
@@ -8,26 +10,31 @@
   <div style="text-align:center;padding-top:4px;">
     <svg class="gd-svg" viewBox="0 0 120 112" width="96" height="90" style="width:#largeur#;height:#hauteur#;max-width:100%;overflow:visible;" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
       <defs>
-        <clipPath id="gd-clip-#uid#"><rect x="22" y="18" width="76" height="74"/></clipPath>
+        <clipPath id="gd-clip-#uid#"><rect class="gd-clip-rect" x="22" y="18" width="76" height="74"/></clipPath>
         <linearGradient id="gd-door-#uid#" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stop-color="#b9c0ca"/><stop offset="1" stop-color="#98a1ad"/>
+          <stop offset="0" stop-color="#c2c9d3"/><stop offset="1" stop-color="#9aa3af"/>
         </linearGradient>
       </defs>
+      <!-- intérieur sombre -->
       <rect x="22" y="18" width="76" height="74" fill="#2b2f36"/>
       <rect x="30" y="60" width="60" height="32" fill="#22262c"/>
-      <g class="gd-door" clip-path="url(#gd-clip-#uid#)">
+      <!-- tablier : rect complet, révélé du haut selon la hauteur du clip -->
+      <g clip-path="url(#gd-clip-#uid#)">
         <rect x="22" y="18" width="76" height="74" fill="url(#gd-door-#uid#)"/>
         <g stroke="#7f8894" stroke-width="1.4">
-          <line x1="22" y1="32" x2="98" y2="32"/><line x1="22" y1="46" x2="98" y2="46"/>
-          <line x1="22" y1="60" x2="98" y2="60"/><line x1="22" y1="74" x2="98" y2="74"/>
+          <line x1="22" y1="30" x2="98" y2="30"/><line x1="22" y1="42" x2="98" y2="42"/>
+          <line x1="22" y1="54" x2="98" y2="54"/><line x1="22" y1="66" x2="98" y2="66"/>
+          <line x1="22" y1="78" x2="98" y2="78"/><line x1="22" y1="90" x2="98" y2="90"/>
         </g>
-        <rect x="52" y="84" width="16" height="3" rx="1.5" fill="#6b7480"/>
       </g>
+      <!-- cadre : montants + linteau + sol -->
       <g fill="none" stroke="#5b6470" stroke-width="4" stroke-linecap="round">
         <line x1="20" y1="16" x2="20" y2="94"/><line x1="100" y1="16" x2="100" y2="94"/>
         <line x1="16" y1="16" x2="104" y2="16"/>
       </g>
       <line x1="8" y1="94" x2="112" y2="94" stroke="#4a525d" stroke-width="4" stroke-linecap="round"/>
+      <!-- coffre / enroulement, au-dessus du cadre -->
+      <rect class="gd-roll" x="18" y="7" width="84" height="8" rx="4" fill="#aab2bd" stroke="#7f8894" stroke-width="1"/>
     </svg>
     <div class="gd-state" style="font-weight:bold;margin-top:2px;"></div>
     <div class="gd-pct" style="font-size:12px;opacity:.75;#hidePercent#"></div>
@@ -37,18 +44,26 @@
     <div>hauteur : 90px ({{Hauteur de l'illustration}})</div>
     <div>largeur : 90px ({{Largeur de l'illustration}})</div>
     <div>travel : 18 ({{Temps de course complet en secondes}})</div>
+    <div>rollgrow : 1 ({{Coffre d'enroulement qui grossit}})</div>
     <div>hidePercent : display:none ({{Masquer le pourcentage}})</div>
   </template>
   <script>
     (function () {
       var UID = '#uid#';
       var TRAVEL = parseFloat('#travel#'); if (isNaN(TRAVEL) || TRAVEL <= 0) { TRAVEL = 18; }
+      var GROW = ('#rollgrow#' === '1');
       var rendered = null, raf = null;
 
       function el() { return document.querySelector('.cmd[data-cmd_uid="' + UID + '"]'); }
       function setDoor(root, v) {
-        var d = root.querySelector('.gd-door');
-        if (d) { d.setAttribute('transform', 'translate(0,' + (-(v / 100) * 74) + ')'); }
+        var ch = (1 - v / 100) * 74;                 // hauteur visible du tablier
+        var clip = root.querySelector('.gd-clip-rect');
+        if (clip) { clip.setAttribute('height', ch.toFixed(2)); }
+        if (GROW) {                                  // coffre qui grossit avec l'ouverture
+          var bh = 5 + (v / 100) * 9;
+          var roll = root.querySelector('.gd-roll');
+          if (roll) { roll.setAttribute('height', bh.toFixed(2)); roll.setAttribute('y', (15 - bh).toFixed(2)); roll.setAttribute('rx', (bh / 2).toFixed(2)); }
+        }
         var p = root.querySelector('.gd-pct'); if (p) { p.textContent = Math.round(v) + '%'; }
       }
       function staticLabel(v) { return (v <= 0) ? 'Fermé' : (v >= 100 ? 'Ouvert' : 'Arrêté ' + Math.round(v) + '%'); }
@@ -74,19 +89,14 @@
         var root = el(); if (root === null) { return; }
         var v = parseFloat(_options.value); if (isNaN(v)) { v = 0; }
         if (v < 0) { v = 0; } if (v > 100) { v = 100; }
-
-        if (rendered === null) {              // premier affichage : pas d'animation
-          rendered = v; setDoor(root, v); setLabel(root, staticLabel(v)); return;
-        }
-        if ((v === 0 || v === 100) && Math.round(rendered) !== v) {   // mouvement vers une extrémité
+        if (rendered === null) { rendered = v; setDoor(root, v); setLabel(root, staticLabel(v)); return; }
+        if ((v === 0 || v === 100) && Math.round(rendered) !== v) {
           var durMs = Math.abs(v - rendered) / 100 * TRAVEL * 1000;
           animateTo(root, v, durMs, (v === 0 ? 'Fermeture…' : 'Ouverture…'), (v === 0 ? 'Fermé' : 'Ouvert'));
-        } else {                              // arrêt intermédiaire (ou déjà à la valeur)
+        } else {
           animateTo(root, v, 400, null, staticLabel(v));
         }
       });
-      // Garde : n'initialise que si le widget est bien présent dans le DOM
-      // (évite une erreur du cœur dans l'aperçu de l'onglet Commandes).
       try {
         if (el() !== null) {
           jeedom.cmd.refreshValue([{ cmd_id: '#id#', value: '#value#', display_value: '#state#', valueDate: '#valueDate#', collectDate: '#collectDate#', alertLevel: '#alertLevel#', unit: '#unite#' }]);

@@ -40,9 +40,11 @@ Renseignez soit l'**id numérique** de la commande, soit sa **chaîne humaine** 
 
 ## Widget
 
-La commande **État** utilise un widget maison embarqué (`garageDoor`) : une **porte de garage sectionnelle en SVG** qui s'anime selon le pourcentage (fermée à 0 %, ouverte à 100 %), avec le libellé d'état et le pourcentage. Aucun fichier icône externe, aucune dépendance, rien à importer — le widget est versionné avec le plugin et lié automatiquement à la commande.
+La commande **État** utilise un widget maison embarqué (`garageDoor`) : un **volet roulant en SVG** qui s'anime selon le pourcentage — le tablier **s'enroule vers le haut** et une **barre (le coffre) reste au-dessus du cadre**. Libellé d'état + pourcentage. Aucune dépendance, rien à importer — versionné avec le plugin, lié automatiquement à la commande.
 
-Paramètres optionnels du widget (onglet *Affichage* de la commande) : `hauteur`, `largeur` (taille de l'illustration), `hidePercent` = `display:none` (masquer le pourcentage).
+Le réglage **Style d'enroulement** propose **Barre fixe (A)** ou **Enroulement qui grossit (B)** (le coffre s'épaissit à l'ouverture).
+
+Paramètres optionnels du widget (onglet *Affichage* de la commande) : `hauteur`, `largeur` (taille), `travel` (temps de course, réglé automatiquement), `rollgrow` (`1` = coffre qui grossit), `hidePercent` = `display:none` (masquer le pourcentage).
 
 ## Apple Home (Homebridge)
 

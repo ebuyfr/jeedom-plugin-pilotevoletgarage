@@ -162,6 +162,15 @@ $eqLogics = eqLogic::byType($plugin->getId());
                             <div class="col-sm-5"><span class="help-block" style="margin-top:7px;">{{0 = désactivé. Ex. Somfy réglé sur 3 min → mettre 3.}}</span></div>
                         </div>
                         <div class="form-group">
+                            <label class="col-sm-3 control-label">{{Style d'enroulement (widget)}}<sup><i class="fas fa-question-circle tooltips" title="{{Barre fixe : le coffre au-dessus du cadre reste de taille constante. Enroulement qui grossit : le coffre s'épaissit à mesure que le volet s'ouvre.}}"></i></sup></label>
+                            <div class="col-sm-4">
+                                <select class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="roll_grow">
+                                    <option value="0">{{Barre fixe (A)}}</option>
+                                    <option value="1">{{Enroulement qui grossit (B)}}</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
                             <label class="col-sm-3 control-label">{{Inverser ouvert/fermé}}<sup><i class="fas fa-question-circle tooltips" title="{{Inverse la sémantique ouvert/fermé partout (widget, état texte, état HomeKit). À activer si l'état affiché est à l'envers par rapport à la réalité.}}"></i></sup></label>
                             <div class="col-sm-6" style="padding-top:7px;">
                                 <input type="checkbox" class="eqLogicAttr" data-l1key="configuration" data-l2key="invert">

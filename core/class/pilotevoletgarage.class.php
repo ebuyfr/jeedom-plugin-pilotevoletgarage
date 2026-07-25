@@ -121,6 +121,8 @@ class pilotevoletgarage extends eqLogic {
         $params = $etat->getDisplay('parameters');
         if (!is_array($params)) { $params = array(); }
         $params['travel'] = (int) $this->getConfiguration('travel_time', 18);
+        // Style d'enroulement du volet : '1' = coffre qui grossit (B), sinon barre fixe (A).
+        $params['rollgrow'] = ($this->getConfiguration('roll_grow', '0') === '1') ? '1' : '0';
         $etat->setDisplay('parameters', $params);
         $etat->save();
         $etatId = $etat->getId();
