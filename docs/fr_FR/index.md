@@ -48,7 +48,7 @@ Paramètres optionnels du widget (onglet *Affichage* de la commande) : `hauteur`
 Le plugin est prêt pour **homebridge-jeedom**. Deux modes au choix (config de l'équipement, champ **Mode HomeKit**) :
 
 - **Porte de garage** (défaut) : accessoire *GarageDoorOpener*. Commande info **État HomeKit** (`GARAGE_STATE`) + **Impulsion** en `GB_TOGGLE` (un appui cycle ouvre/stop/ferme). Valeurs d'état (defaults homebridge-jeedom) : ouvert=255, ouverture=254, arrêté=253, fermeture=252, **fermé=0**.
-- **Volet** : accessoire *WindowCovering* avec **position exacte 0-100 %**. `FLAP_STATE` (position) + `FLAP_UP`/`FLAP_DOWN`/`FLAP_STOP` + curseur **Position** (`FLAP_SLIDER`). Le plugin rejoint au mieux la position visée (moteur puis impulsion de stop à l'arrivée). La précision dépend du temps de course et de la tâche détachée.
+- **Volet — position (expérimental)** : accessoire *WindowCovering* avec curseur 0-100 %. ⚠️ Avec un **moteur à bouton unique sans retour de position**, le plugin ne peut pas garantir le sens de déplacement : le **positionnement au curseur se désynchronise** (l'estimation compte à l'envers si le moteur part dans l'autre sens). À réserver à un câblage **2 contacts** (OUT1 = ouvre, OUT2 = ferme) ou à un montage avec **capteur de position**. Pour un bouton unique, préférez le mode Porte de garage.
 
 Après changement de mode : sauvegarder l'équipement puis **redémarrer le démon Homebridge** (le type d'accessoire change).
 

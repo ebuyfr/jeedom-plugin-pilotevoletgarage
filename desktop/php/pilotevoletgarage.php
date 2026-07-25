@@ -97,13 +97,14 @@ $eqLogics = eqLogic::byType($plugin->getId());
 
                         <legend><i class="fab fa-apple"></i> {{Apple Home / Homebridge}}</legend>
                         <div class="form-group">
-                            <label class="col-sm-3 control-label">{{Mode HomeKit}}<sup><i class="fas fa-question-circle tooltips" title="{{Porte de garage = ouvert/fermé (bouton unique). Volet = position exacte 0-100 % avec curseur (au mieux via l'estimation). Après changement, sauvegarder puis redémarrer le démon Homebridge.}}"></i></sup></label>
+                            <label class="col-sm-3 control-label">{{Mode HomeKit}}<sup><i class="fas fa-question-circle tooltips" title="{{Porte de garage = ouvert/fermé (bouton unique) : fiable, recommandé. Volet = curseur de position, mais avec un moteur à bouton unique sans retour de position le sens ne peut pas être garanti : le positionnement se désynchronise (expérimental). Après changement, sauvegarder puis redémarrer le démon Homebridge.}}"></i></sup></label>
                             <div class="col-sm-4">
                                 <select class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="hk_mode">
-                                    <option value="garage">{{Porte de garage (ouvert/fermé)}}</option>
-                                    <option value="volet">{{Volet (position exacte)}}</option>
+                                    <option value="garage">{{Porte de garage (recommandé)}}</option>
+                                    <option value="volet">{{Volet — position (expérimental)}}</option>
                                 </select>
                             </div>
+                            <div class="col-sm-5"><span class="help-block" style="margin-top:7px;">{{Bouton unique = mode garage. Le curseur volet nécessite un câblage 2 contacts (OUT1/OUT2) ou un capteur de position.}}</span></div>
                         </div>
 
                         <legend><i class="fas fa-plug"></i> {{Relais Z-Wave JS (FGBS-222)}}</legend>
