@@ -3,6 +3,15 @@
 Toutes les évolutions notables de ce plugin sont consignées ici.
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/), versionnement [SemVer](https://semver.org/lang/fr/).
 
+## [0.11.0] - 2026-07-25
+### Ajouté
+- **Affichages de temps sur le widget** (activables/désactivables) :
+  - **Durée dans l'état** : temps écoulé (h:m:s, live) depuis que la porte est dans son état courant (ouvert / fermé / arrêté).
+  - **Compte à rebours fermeture auto** : temps restant avant la fermeture automatique Somfy (si un délai est configuré).
+  - Alimentés par une commande interne `meta` (horodatages) ; rendu et décompte **côté navigateur** (mise à jour chaque seconde).
+### Note
+- La configuration de l'équipement (réglages) est stockée en base Jeedom : elle est **conservée lors des mises à jour du plugin** (le git pull ne remplace que le code). L'état estimé (cache) survit aussi aux redémarrages.
+
 ## [0.10.1] - 2026-07-25
 ### Corrigé / Modifié
 - **Fermeture auto en secondes** : le réglage passe de minutes à **secondes** (`auto_close_sec`, 0-120) pour coller au Somfy (5 s → 2 min). Déclenchement rendu **précis** via une tâche détachée programmée à l'échéance (le cron reste en filet de sécurité) au lieu d'attendre le prochain passage du cron.
@@ -105,6 +114,7 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/), versionne
 - Délégation aux commandes Z-Wave JS existantes (`execCmd`), impulsion unique séquentielle, état estimé par temps de course.
 - Commandes : État, État (texte), Ouvrir, Fermer, Stop, Impulsion, Rafraîchir.
 
+[0.11.0]: https://github.com/ebuyfr/jeedom-plugin-pilotevoletgarage/releases/tag/v0.11.0
 [0.10.1]: https://github.com/ebuyfr/jeedom-plugin-pilotevoletgarage/releases/tag/v0.10.1
 [0.10.0]: https://github.com/ebuyfr/jeedom-plugin-pilotevoletgarage/releases/tag/v0.10.0
 [0.9.2]: https://github.com/ebuyfr/jeedom-plugin-pilotevoletgarage/releases/tag/v0.9.2

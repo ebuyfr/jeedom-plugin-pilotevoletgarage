@@ -59,7 +59,9 @@ class pilotevoletgarage extends eqLogic {
         $mode = ($this->getConfiguration('hk_mode', 'garage') === 'volet') ? 'volet' : 'garage';
         $etat = $this->getCmd(null, 'etat');
         $hk   = $this->getCmd(null, 'etat_hk');
-        $needSync = !is_object($etat) || !is_object($hk) || !is_object($this->getCmd(null, 'position'));
+        $needSync = !is_object($etat) || !is_object($hk)
+            || !is_object($this->getCmd(null, 'position'))
+            || !is_object($this->getCmd(null, 'meta'));
         if (is_object($etat)) {
             $t = $etat->getTemplate('dashboard');
             if ($t === '' || $t === 'core::garageDoor') {
@@ -117,13 +119,6 @@ class pilotevoletgarage extends eqLogic {
         // Jeedom préfixe par 'core::' et cherche le widget dans le cœur.
         $etat->setTemplate('dashboard', 'pilotevoletgarage::garageDoor');
         $etat->setTemplate('mobile', 'pilotevoletgarage::garageDoor');
-        // Transmet le temps de course au widget (animation client-side #travel#).
-        $params = $etat->getDisplay('parameters');
-        if (!is_array($params)) { $params = array(); }
-        $params['travel'] = (int) $this->getConfiguration('travel_time', 18);
-        // Style d'enroulement du volet : '1' = coffre qui grossit (B), sinon barre fixe (A).
-        $params['rollgrow'] = ($this->getConfiguration('roll_grow', '0') === '1') ? '1' : '0';
-        $etat->setDisplay('parameters', $params);
         $etat->save();
         $etatId = $etat->getId();
 
@@ -158,6 +153,33 @@ class pilotevoletgarage extends eqLogic {
         $hk->setIsVisible(0);
         $hk->setIsHistorized(0);
         $hk->save();
+
+        // --- Info : meta (timestamps pour le widget) -------------------
+        // Valeur "state_since|close_at" (epoch) : le widget affiche la durée
+        // dans l'état courant et le compte à rebours de fermeture auto (h:m:s).
+        $meta = $this->getCmd(null, 'meta');
+        if (!is_object($meta)) {
+            $meta = new pilotevoletgarageCmd();
+            $meta->setLogicalId('meta');
+            $meta->setEqLogic_id($this->getId());
+            $meta->setName(__('Meta', __FILE__));
+        }
+        $meta->setType('info');
+        $meta->setSubType('string');
+        $meta->setIsVisible(0);
+        $meta->setIsHistorized(0);
+        $meta->save();
+
+        // --- Paramètres du widget (transmis en #placeholders#) ---------
+        $params = $etat->getDisplay('parameters');
+        if (!is_array($params)) { $params = array(); }
+        $params['travel']   = (int) $this->getConfiguration('travel_time', 18);
+        $params['rollgrow'] = ($this->getConfiguration('roll_grow', '0') === '1') ? '1' : '0';
+        $params['metaid']   = (int) $meta->getId();
+        $params['showdur']  = ($this->getConfiguration('show_duration', '0') === '1') ? '1' : '0';
+        $params['showcd']   = ($this->getConfiguration('show_countdown', '0') === '1') ? '1' : '0';
+        $etat->setDisplay('parameters', $params);
+        $etat->save();
 
         // --- Actions --------------------------------------------------
         // Mode garage : Ouvrir=GB_OPEN / Fermer=GB_CLOSE → Apple Home transmet
@@ -473,6 +495,26 @@ class pilotevoletgarage extends eqLogic {
         $hk = $this->getCmd(null, 'etat_hk');
         if (is_object($hk)) {
             $hk->event($this->hkState());
+        }
+
+        // --- Meta (timestamps pour l'affichage h:m:s côté widget) ------
+        // Clé d'état stable : suivi de la durée « dans l'état courant ».
+        $key = $this->getCache('moving', 0) ? 'mov' : ($o >= 100 ? 'open' : ($o <= 0 ? 'closed' : 'part'));
+        if ($this->getCache('state_key', '') !== $key) {
+            $this->setCache('state_key', $key);
+            $this->setCache('state_since', microtime(true));
+        }
+        $stateSince = (float) $this->getCache('state_since', microtime(true));
+        // Échéance de fermeture auto (0 si non applicable).
+        $closeAt = 0;
+        $sec = (int) $this->getConfiguration('auto_close_sec', 0);
+        $os  = $this->getCache('open_since', '');
+        if ($sec > 0 && !$this->getCache('moving', 0) && $o >= 100 && $os !== '' && $os !== null) {
+            $closeAt = (float) $os + $sec;
+        }
+        $meta = $this->getCmd(null, 'meta');
+        if (is_object($meta)) {
+            $meta->event(round($stateSince, 3) . '|' . round($closeAt, 3));
         }
     }
 

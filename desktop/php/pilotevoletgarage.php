@@ -171,6 +171,13 @@ $eqLogics = eqLogic::byType($plugin->getId());
                             </div>
                         </div>
                         <div class="form-group">
+                            <label class="col-sm-3 control-label">{{Affichages sur le widget}}<sup><i class="fas fa-question-circle tooltips" title="{{Durée : temps écoulé dans l'état courant (h:m:s). Compte à rebours : temps restant avant la fermeture auto Somfy (nécessite un délai de fermeture auto configuré).}}"></i></sup></label>
+                            <div class="col-sm-9">
+                                <label class="checkbox-inline"><input type="checkbox" class="eqLogicAttr" data-l1key="configuration" data-l2key="show_duration">{{Durée dans l'état}}</label>
+                                <label class="checkbox-inline"><input type="checkbox" class="eqLogicAttr" data-l1key="configuration" data-l2key="show_countdown">{{Compte à rebours fermeture auto}}</label>
+                            </div>
+                        </div>
+                        <div class="form-group">
                             <label class="col-sm-3 control-label">{{Inverser ouvert/fermé}}<sup><i class="fas fa-question-circle tooltips" title="{{Inverse la sémantique ouvert/fermé partout (widget, état texte, état HomeKit). À activer si l'état affiché est à l'envers par rapport à la réalité.}}"></i></sup></label>
                             <div class="col-sm-6" style="padding-top:7px;">
                                 <input type="checkbox" class="eqLogicAttr" data-l1key="configuration" data-l2key="invert">

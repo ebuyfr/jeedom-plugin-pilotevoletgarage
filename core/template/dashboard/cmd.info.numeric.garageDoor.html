@@ -38,6 +38,8 @@
     </svg>
     <div class="gd-state" style="font-weight:bold;margin-top:2px;"></div>
     <div class="gd-pct" style="font-size:12px;opacity:.75;#hidePercent#"></div>
+    <div class="gd-dur" style="font-size:11px;opacity:.6;display:none;"></div>
+    <div class="gd-cd" style="font-size:11px;opacity:.8;display:none;"></div>
   </div>
   <div class="timeCmd label label-default #history#" data-type="info"></div>
   <template>
@@ -53,6 +55,8 @@
       var TRAVEL = parseFloat('#travel#'); if (isNaN(TRAVEL) || TRAVEL <= 0) { TRAVEL = 18; }
       var GROW = ('#rollgrow#' === '1');
       var rendered = null, raf = null;
+      var SHOWDUR = ('#showdur#' === '1'), SHOWCD = ('#showcd#' === '1');
+      var META = { ss: 0, ca: 0 };
 
       function el() { return document.querySelector('.cmd[data-cmd_uid="' + UID + '"]'); }
       function setDoor(root, v) {
@@ -97,6 +101,38 @@
           animateTo(root, v, 400, null, staticLabel(v));
         }
       });
+
+      // --- Affichages de temps (durée d'état + compte à rebours) ------
+      function fmt(sec) {
+        sec = Math.max(0, Math.floor(sec));
+        var h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60, o = '';
+        if (h > 0) { o += h + 'h'; }
+        if (h > 0 || m > 0) { o += (h > 0 && m < 10 ? '0' : '') + m + 'm'; }
+        o += ((h > 0 || m > 0) && s < 10 ? '0' : '') + s + 's';
+        return o;
+      }
+      function tick() {
+        var root = el(); if (root === null) { return; }
+        var now = Date.now() / 1000;
+        var dur = root.querySelector('.gd-dur'), cd = root.querySelector('.gd-cd');
+        if (dur) {
+          if (SHOWDUR && META.ss > 0) { dur.style.display = ''; dur.textContent = 'Depuis ' + fmt(now - META.ss); }
+          else { dur.style.display = 'none'; }
+        }
+        if (cd) {
+          if (SHOWCD && META.ca > now) { cd.style.display = ''; cd.textContent = 'Fermeture dans ' + fmt(META.ca - now); }
+          else { cd.style.display = 'none'; }
+        }
+      }
+      if (SHOWDUR || SHOWCD) {
+        jeedom.cmd.addUpdateFunction('#metaid#', function (_options) {
+          var p = ('' + _options.value).split('|');
+          META.ss = parseFloat(p[0]) || 0;
+          META.ca = parseFloat(p[1]) || 0;
+          tick();
+        });
+        setInterval(tick, 1000);
+      }
       try {
         if (el() !== null) {
           jeedom.cmd.refreshValue([{ cmd_id: '#id#', value: '#value#', display_value: '#state#', valueDate: '#valueDate#', collectDate: '#collectDate#', alertLevel: '#alertLevel#', unit: '#unite#' }]);
