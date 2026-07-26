@@ -72,7 +72,8 @@ class pilotevoletgarage extends eqLogic {
         $etat = $this->getCmd(null, 'etat');
         $hk   = $this->getCmd(null, 'etat_hk');
         $needSync = !is_object($etat) || !is_object($hk)
-            || !is_object($this->getCmd(null, 'position'));
+            || !is_object($this->getCmd(null, 'position'))
+            || is_object($this->getCmd(null, 'meta')); // ancienne cmd à nettoyer
         if (is_object($etat)) {
             $t = $etat->getTemplate('dashboard');
             if ($t === '' || $t === 'core::garageDoor') {
