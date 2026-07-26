@@ -1,4 +1,6 @@
-<!-- Widget "garageDoor" (mobile) — volet roulant animé côté navigateur. -->
+<!-- Widget "garageDoor" (mobile) — volet roulant animé côté navigateur.
+     Le tablier s'enroule vers le haut, une barre (coffre) reste au-dessus du cadre.
+     Affiche aussi la durée dans l'état et le compte à rebours de fermeture auto. -->
 <div class="cmd cmd-widget #history# #displayHistory#" data-type="info" data-subtype="numeric" data-template="garageDoor" data-cmd_id="#id#" data-cmd_uid="#uid#" data-version="#version#" data-eqLogic_id="#eqLogic_id#" title="#collectDate#">
   <div class="title #hide_name#">
     <div class="cmdName" style="font-weight:bold;">#name_display#</div>
@@ -30,6 +32,8 @@
     </svg>
     <div class="gd-state" style="font-weight:bold;margin-top:2px;"></div>
     <div class="gd-pct" style="font-size:12px;opacity:.75;#hidePercent#"></div>
+    <div class="gd-dur" style="font-size:11px;opacity:.6;display:none;"></div>
+    <div class="gd-cd" style="font-size:11px;opacity:.8;display:none;"></div>
   </div>
   <div class="timeCmd label label-default #history#" data-type="info"></div>
   <template>
@@ -45,6 +49,10 @@
       var TRAVEL = parseFloat('#travel#'); if (isNaN(TRAVEL) || TRAVEL <= 0) { TRAVEL = 18; }
       var GROW = ('#rollgrow#' === '1');
       var rendered = null, raf = null;
+      var SHOWDUR = ('#showdur#' === '1'), SHOWCD = ('#showcd#' === '1');
+      var AUTOCLOSE = parseFloat('#autoclose#'); if (isNaN(AUTOCLOSE)) { AUTOCLOSE = 0; }
+      var SS0 = (function () { var d = new Date(('#valueDate#' || '').replace(' ', 'T')).getTime() / 1000; return isNaN(d) ? (Date.now() / 1000) : d; })();
+      var lastLabel = null, stateSince = SS0, closeAt = 0;
 
       function el() { return document.querySelector('.cmd[data-cmd_uid="' + UID + '"]'); }
       function setDoor(root, v) {
@@ -59,7 +67,14 @@
         var p = root.querySelector('.gd-pct'); if (p) { p.textContent = Math.round(v) + '%'; }
       }
       function staticLabel(v) { return (v <= 0) ? 'Fermé' : (v >= 100 ? 'Ouvert' : 'Arrêté ' + Math.round(v) + '%'); }
-      function setLabel(root, txt) { var s = root.querySelector('.gd-state'); if (s) { s.textContent = txt; } }
+      function setLabel(root, txt) {
+        var s = root.querySelector('.gd-state'); if (s) { s.textContent = txt; }
+        if (txt !== lastLabel) {
+          stateSince = (lastLabel === null) ? SS0 : (Date.now() / 1000);
+          lastLabel = txt;
+          closeAt = (txt === 'Ouvert' && AUTOCLOSE > 0) ? (stateSince + AUTOCLOSE) : 0;
+        }
+      }
 
       function animateTo(root, target, durationMs, movingLabel, endLabel) {
         if (raf) { cancelAnimationFrame(raf); raf = null; }
@@ -89,6 +104,30 @@
           animateTo(root, v, 400, null, staticLabel(v));
         }
       });
+
+      function fmt(sec) {
+        sec = Math.max(0, Math.floor(sec));
+        var h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60, o = '';
+        if (h > 0) { o += h + 'h'; }
+        if (h > 0 || m > 0) { o += (h > 0 && m < 10 ? '0' : '') + m + 'm'; }
+        o += ((h > 0 || m > 0) && s < 10 ? '0' : '') + s + 's';
+        return o;
+      }
+      function tick() {
+        var root = el(); if (root === null) { return; }
+        var now = Date.now() / 1000;
+        var dur = root.querySelector('.gd-dur'), cd = root.querySelector('.gd-cd');
+        if (dur) {
+          if (SHOWDUR && stateSince > 0) { dur.style.display = ''; dur.textContent = 'Depuis ' + fmt(now - stateSince); }
+          else { dur.style.display = 'none'; }
+        }
+        if (cd) {
+          if (SHOWCD && closeAt > now) { cd.style.display = ''; cd.textContent = 'Fermeture dans ' + fmt(closeAt - now); }
+          else { cd.style.display = 'none'; }
+        }
+      }
+      if (SHOWDUR || SHOWCD) { setInterval(tick, 1000); }
+
       try {
         if (el() !== null) {
           jeedom.cmd.refreshValue([{ cmd_id: '#id#', value: '#value#', display_value: '#state#', valueDate: '#valueDate#', collectDate: '#collectDate#', alertLevel: '#alertLevel#', unit: '#unite#' }]);

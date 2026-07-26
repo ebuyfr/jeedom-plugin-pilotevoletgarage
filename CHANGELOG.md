@@ -3,6 +3,10 @@
 Toutes les évolutions notables de ce plugin sont consignées ici.
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/), versionnement [SemVer](https://semver.org/lang/fr/).
 
+## [0.12.3] - 2026-07-25
+### Corrigé
+- **Affichages de temps aussi sur l'app mobile** : la durée « Depuis… » et le compte à rebours n'apparaissaient que sur le dashboard web. Le widget **mobile** (app Jeedom) affiche désormais les mêmes informations.
+
 ## [0.12.2] - 2026-07-25
 ### Corrigé
 - **Nettoyage automatique de l'ancienne commande `meta`** : elle n'était supprimée qu'à la sauvegarde de l'équipement. Le cron (auto-réparation) la retire désormais tout seul si elle traîne encore après mise à jour — plus besoin de re-sauvegarder à la main.
@@ -129,6 +133,7 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/), versionne
 - Délégation aux commandes Z-Wave JS existantes (`execCmd`), impulsion unique séquentielle, état estimé par temps de course.
 - Commandes : État, État (texte), Ouvrir, Fermer, Stop, Impulsion, Rafraîchir.
 
+[0.12.3]: https://github.com/ebuyfr/jeedom-plugin-pilotevoletgarage/releases/tag/v0.12.3
 [0.12.2]: https://github.com/ebuyfr/jeedom-plugin-pilotevoletgarage/releases/tag/v0.12.2
 [0.12.1]: https://github.com/ebuyfr/jeedom-plugin-pilotevoletgarage/releases/tag/v0.12.1
 [0.12.0]: https://github.com/ebuyfr/jeedom-plugin-pilotevoletgarage/releases/tag/v0.12.0
