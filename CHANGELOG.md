@@ -3,6 +3,10 @@
 Toutes les évolutions notables de ce plugin sont consignées ici.
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/), versionnement [SemVer](https://semver.org/lang/fr/).
 
+## [0.12.4] - 2026-07-26
+### Corrigé
+- **Affichages de temps exacts en accès distant** : la durée « Depuis… » et le compte à rebours de fermeture auto étaient décalés (jusqu'à ~1 min, ~36 s en moyenne) sur l'appli mobile en accès distant, car ils étaient ancrés sur l'**instant de réception** de l'événement (`Date.now()`) — or en distant l'événement arrive avec du retard. Ils sont désormais ancrés sur l'**horodatage serveur** de la valeur (`valueDate` livré par Jeedom à chaque mise à jour) ; pour l'état stabilisé après un mouvement, l'ancre tient compte de la durée de course. Résultat : compteurs exacts quel que soit le retard de réception. Régression introduite en 0.12.1 (passage au calcul « tout côté navigateur », suppression de la commande `meta` qui portait les horodatages serveur). Widgets **dashboard** et **mobile** corrigés.
+
 ## [0.12.3] - 2026-07-25
 ### Corrigé
 - **Affichages de temps aussi sur l'app mobile** : la durée « Depuis… » et le compte à rebours n'apparaissaient que sur le dashboard web. Le widget **mobile** (app Jeedom) affiche désormais les mêmes informations.

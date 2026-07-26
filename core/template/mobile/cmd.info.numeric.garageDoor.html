@@ -51,7 +51,9 @@
       var rendered = null, raf = null;
       var SHOWDUR = ('#showdur#' === '1'), SHOWCD = ('#showcd#' === '1');
       var AUTOCLOSE = parseFloat('#autoclose#'); if (isNaN(AUTOCLOSE)) { AUTOCLOSE = 0; }
-      var SS0 = (function () { var d = new Date(('#valueDate#' || '').replace(' ', 'T')).getTime() / 1000; return isNaN(d) ? (Date.now() / 1000) : d; })();
+      // Convertit une date Jeedom ("Y-m-d H:i:s") en secondes epoch (fallback = maintenant).
+      function toSec(s) { var d = new Date(String(s || '').replace(' ', 'T')).getTime() / 1000; return isNaN(d) ? (Date.now() / 1000) : d; }
+      var SS0 = toSec('#valueDate#');
       var lastLabel = null, stateSince = SS0, closeAt = 0;
 
       function el() { return document.querySelector('.cmd[data-cmd_uid="' + UID + '"]'); }
@@ -67,27 +69,36 @@
         var p = root.querySelector('.gd-pct'); if (p) { p.textContent = Math.round(v) + '%'; }
       }
       function staticLabel(v) { return (v <= 0) ? 'Fermé' : (v >= 100 ? 'Ouvert' : 'Arrêté ' + Math.round(v) + '%'); }
-      function setLabel(root, txt) {
+      function setLabel(root, txt, sinceTs) {
         var s = root.querySelector('.gd-state'); if (s) { s.textContent = txt; }
         if (txt !== lastLabel) {
-          stateSince = (lastLabel === null) ? SS0 : (Date.now() / 1000);
+          // Ancre sur le temps SERVEUR (valueDate) quand il est fourni, pas sur
+          // l'instant de réception : en accès distant l'événement arrive en retard,
+          // mais « Depuis… » et le compte à rebours restent exacts. Sinon : premier
+          // libellé = date de la commande État (SS0), changements suivants = maintenant.
+          stateSince = (typeof sinceTs === 'number' && !isNaN(sinceTs)) ? sinceTs
+                     : ((lastLabel === null) ? SS0 : (Date.now() / 1000));
           lastLabel = txt;
           closeAt = (txt === 'Ouvert' && AUTOCLOSE > 0) ? (stateSince + AUTOCLOSE) : 0;
         }
       }
 
-      function animateTo(root, target, durationMs, movingLabel, endLabel) {
+      function animateTo(root, target, durationMs, movingLabel, endLabel, anchorTs) {
         if (raf) { cancelAnimationFrame(raf); raf = null; }
         var startVal = (rendered === null) ? target : rendered;
         var startT = null, dur = Math.max(1, durationMs);
-        if (movingLabel) { setLabel(root, movingLabel); }
+        // anchorTs = instant SERVEUR du début de mouvement ; l'état final est atteint
+        // dur ms plus tard. Sert d'ancre exacte aux affichages de temps (indépendant
+        // du retard de réception en accès distant).
+        var hasAnchor = (typeof anchorTs === 'number' && !isNaN(anchorTs));
+        if (movingLabel) { setLabel(root, movingLabel, hasAnchor ? anchorTs : undefined); }
         function step(now) {
           if (startT === null) { startT = now; }
           var t = Math.min(1, (now - startT) / dur);
           rendered = startVal + (target - startVal) * t;
           setDoor(root, rendered);
           if (t < 1) { raf = requestAnimationFrame(step); }
-          else { rendered = target; setDoor(root, target); setLabel(root, endLabel); raf = null; }
+          else { rendered = target; setDoor(root, target); setLabel(root, endLabel, hasAnchor ? (anchorTs + dur / 1000) : undefined); raf = null; }
         }
         raf = requestAnimationFrame(step);
       }
@@ -96,12 +107,13 @@
         var root = el(); if (root === null) { return; }
         var v = parseFloat(_options.value); if (isNaN(v)) { v = 0; }
         if (v < 0) { v = 0; } if (v > 100) { v = 100; }
-        if (rendered === null) { rendered = v; setDoor(root, v); setLabel(root, staticLabel(v)); return; }
+        var vd = toSec(_options.valueDate);   // horodatage serveur de cette valeur
+        if (rendered === null) { rendered = v; setDoor(root, v); setLabel(root, staticLabel(v), vd); return; }
         if ((v === 0 || v === 100) && Math.round(rendered) !== v) {
           var durMs = Math.abs(v - rendered) / 100 * TRAVEL * 1000;
-          animateTo(root, v, durMs, (v === 0 ? 'Fermeture…' : 'Ouverture…'), (v === 0 ? 'Fermé' : 'Ouvert'));
+          animateTo(root, v, durMs, (v === 0 ? 'Fermeture…' : 'Ouverture…'), (v === 0 ? 'Fermé' : 'Ouvert'), vd);
         } else {
-          animateTo(root, v, 400, null, staticLabel(v));
+          animateTo(root, v, 400, null, staticLabel(v), vd);
         }
       });
 
